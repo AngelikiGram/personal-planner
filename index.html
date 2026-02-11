@@ -1034,7 +1034,8 @@
             dogGrp.scale.set(0.7, 0.7, 0.7);
             scene3d.add(dogGrp);
             // Place the dog on the path at t=0 (start)
-            const dogStart = pathCurve.getPoint(0);
+            // Use getPointAt (ArcLength) to match TubeGeometry texture coordinates
+            const dogStart = pathCurve.getPointAt(0); 
             dogGrp.position.copy(dogStart);
             dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
         }
@@ -1047,7 +1048,8 @@
             // Place each location on the path at evenly spaced intervals
             locData.forEach((loc, idx) => {
                 const t = idx / (locData.length - 1);
-                const p = pathCurve.getPoint(t);
+                // Use getPointAt to ensure even physical spacing
+                const p = pathCurve.getPointAt(t);
                 // Recompute y using terrain height at (x, z)
                 const locY = hillH(p.x, p.z) + terrainY;
                 const disc = new THREE.Mesh(
@@ -1167,7 +1169,8 @@
             const dt = clock3d.getDelta(), el = clock3d.getElapsedTime();
             currentDogT += (targetDogT - currentDogT) * Math.min(dt * 2, 1);
             if (pathCurve && dogGrp) {
-                const pos = pathCurve.getPoint(currentDogT);
+                // Use getPointAt (ArcLength) to match TubeGeometry coloring
+                const pos = pathCurve.getPointAt(currentDogT);
                 dogGrp.position.copy(pos);
                 dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
                 
@@ -1177,13 +1180,12 @@
                     const count = colors.count; // Vertices
                     const rings = 201; // 200 Segments + 1
                     
-                    // Approximate which ring we are at
-                    // If t=0 -> ring 0. If t=1 -> ring 200.
-                    const currentRing = Math.floor(currentDogT * (rings - 1));
-                    const vertsPerRing = count / rings; // Should be 9 (8 radial + 1)
+                    // Use Ceil to ensure gold extends fully to/under the dog
+                    const currentRing = Math.ceil(currentDogT * (rings - 1));
+                    const vertsPerRing = count / rings; 
                     
                     // c1: GOLD (Done) | c2: SAND (Future)
-                    const c1 = { r: 1.0, g: 0.84, b: 0.0 }; // Gold/Orange-ish
+                    const c1 = { r: 1.0, g: 0.84, b: 0.0 }; // Gold
                     const c2 = { r: 0.76, g: 0.62, b: 0.44 }; // Sand
                     
                     for(let i=0; i<count; i++) {
@@ -1198,7 +1200,7 @@
                 }
 
                 const lt = Math.min(currentDogT + 0.01, 1);
-                const lp = pathCurve.getPoint(lt);
+                const lp = pathCurve.getPointAt(lt); // Use getPointAt here too
                 const dir = new THREE.Vector3().subVectors(lp, pos);
                 if (dir.lengthSq() > 0.0001) dogGrp.rotation.y = Math.atan2(dir.x, dir.z) - Math.PI/2;
                 const moving = Math.abs(targetDogT - currentDogT) > 0.001;
