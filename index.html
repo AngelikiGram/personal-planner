@@ -625,11 +625,17 @@
         let db, auth, userRef;
         window.isFirebaseReady = false;
         
-        if (firebaseConfig.apiKey) {
-            firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            auth = firebase.auth();
-            window.isFirebaseReady = true;
+        if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "PASTE_API_KEY_HERE") {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                auth = firebase.auth();
+                window.isFirebaseReady = true;
+                console.log("Firebase initialized successfully");
+            } catch (e) {
+                console.error("Firebase Init Error:", e);
+                alert("Firebase Error: " + e.message);
+            }
         } else {
             console.log("Firebase not configured - using Local Storage only.");
         }
@@ -1490,8 +1496,6 @@
             unsubscribe = userRef.onSnapshot(doc => {
                 if (doc.exists) {
                     const d = doc.data();
-                    // Merge logic: Take cloud if newer? Or just take cloud.
-                    // Simple: Take cloud.
                     coins = d.coins || 0;
                     total = d.total || 0;
                     if(d.vouchers) vouchers = JSON.parse(d.vouchers);
@@ -1499,13 +1503,18 @@
                     if(d.customRewards) customRewards = JSON.parse(d.customRewards);
                     if(d.profile) profile = d.profile;
                     
-                    // Save to local backup
                     localStorage.setItem('b_coins', coins);
+                    localStorage.setItem('b_total', total);
                     localStorage.setItem('b_profile', JSON.stringify(profile));
-                    // etc...
                     
                     render();
                     document.getElementById('header-avatar').innerText = profile.avatar;
+                    // Update cloud status text if profile modal behaves
+                    let cloudStatus = document.getElementById('pf-cloud-status');
+                    if(cloudStatus) {
+                        cloudStatus.innerText = '✅ Cloud Connected: ' + (auth.currentUser.email || "Shared Profile");
+                        cloudStatus.style.color = '#34c759';
+                    }
                 } else {
                     // First time: push local to cloud
                     save(); 
@@ -1513,29 +1522,7 @@
             });
         }
         
-        // Add Sign In for real sync
-        function linkCloud() {
-            if(!auth) return alert("Configure Firebase in code first!");
-            const email = prompt("Enter email to sync devices:");
-            if(!email) return;
-            const pass = prompt("Enter a password:");
-            if(!pass) return;
-            
-            auth.signInWithEmailAndPassword(email, pass)
-                .then(() => alert("Synced!"))
-                .catch(e => {
-                    if(e.code === 'auth/user-not-found') {
-                        auth.createUserWithEmailAndPassword(email, pass)
-                            .then(() => {
-                                // Save current data to new account
-                                save();
-                                alert("Account created & Synced!");
-                            });
-                    } else {
-                        alert("Error: " + e.message);
-                    }
-                });
-        }
+        // linkCloud function removed as it is no longer used
 
         function render() {
             document.getElementById('coin-txt').innerText = "💰 " + coins.toString().padStart(4, '0');
