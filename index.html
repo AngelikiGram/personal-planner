@@ -619,14 +619,15 @@
             const vp = document.getElementById('viewport');
             const W = vp.clientWidth, H = vp.clientHeight;
             scene3d = new THREE.Scene();
-            scene3d.background = null; // transparent
+            // Add a soft sky blue background
+            scene3d.background = new THREE.Color(0xbfdfff);
             // Remove fog for clarity
             // scene3d.fog = new THREE.FogExp2(0xaed8f0, 0.015);
             cam3d = new THREE.PerspectiveCamera(48, W / H, 0.1, 200);
-            // Move camera directly above the map, looking straight down
-            cam3d.position.set(0, 25, 0);
-            cam3d.up.set(0, 0, -1); // Ensure north is up
-            cam3d.lookAt(0, 0, 0);
+            // Centralize camera to the right, frame all locations
+            // Move camera further back and higher for full map view
+            cam3d.position.set(28, 16, 35); // Further right and higher
+            cam3d.lookAt(1, 0, 2); // Center of the map
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0); // transparent
             ren3d.setSize(W, H);
@@ -657,28 +658,67 @@
         function mkHill() {
             // If scaleUp is true, scale the map up to fill the viewport
             let scaleUp = arguments[0] === true;
-            const geo = new THREE.PlaneGeometry(scaleUp ? 38 : 26, scaleUp ? 29 : 20, 64, 48);
+            // Increase scale to fit all locations in viewport
+            // Extend terrain from left to right
+            const geo = new THREE.PlaneGeometry(scaleUp ? 28 : 10, scaleUp ? 25 : 50, 64, 48);
             geo.rotateX(-Math.PI / 2);
+            var var_y = -7; // Lower the terrain to better fit the camera view
             const pos = geo.attributes.position;
             for (let v = 0; v < pos.count; v++) pos.setY(v, hillH(pos.getX(v), pos.getZ(v)) * (scaleUp ? 1.45 : 1));
             geo.computeVertexNormals();
             const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x5cb338 }));
+            mesh.position.y = var_y; // Move the terrain mesh down by var_y units
             mesh.receiveShadow = true; scene3d.add(mesh);
-            // Removed water plane for field-only map
+                        // Add rainbow to the sky
+                        function mkRainbow() {
+                            const rainbowGeo = new THREE.TorusGeometry(8, 0.35, 16, 100, Math.PI);
+                            const rainbowMat = new THREE.MeshBasicMaterial({ color: 0xffb6c1 });
+                            const rainbow = new THREE.Mesh(rainbowGeo, rainbowMat);
+                            rainbow.position.set(0, 7, 0);
+                            rainbow.rotation.x = Math.PI / 2;
+                            scene3d.add(rainbow);
+                            // Add colored bands
+                            const colors = [0xff0000, 0xffa500, 0xffff00, 0x00ff00, 0x0000ff, 0x4b0082, 0xee82ee];
+                            colors.forEach((col, i) => {
+                                const bandGeo = new THREE.TorusGeometry(8 - i * 0.5, 0.18, 16, 100, Math.PI);
+                                const bandMat = new THREE.MeshBasicMaterial({ color: col });
+                                const band = new THREE.Mesh(bandGeo, bandMat);
+                                band.position.set(0, 7, 0);
+                                // band.rotation.x = Math.PI / 2;
+                                scene3d.add(band);
+                            });
+                        }
+                        mkRainbow();
+            // Removed water for field-only map
         }
 
         function mkPath() {
             // If scaleUp is true, scale the path up to match the hill
             let scaleUp = arguments[0] === true;
             const scale = scaleUp ? 1.45 : 1;
-            const pts = [[-8,5],[-6,3.5],[-4,4],[-2,2.5],[0,3],[2,1.5],[4,2.5],[6,1],[8,0],[9.5,-1]]
-                .map(([x,z]) => new THREE.Vector3(x * (scaleUp ? 1.46 : 1), hillH(x * (scaleUp ? 1.46 : 1),z * scale) * scale + 0.15, z * scale));
+            // Make the path a bit longer and span the terrain
+            const pathWidth = scaleUp ? 28 : 10;
+            const leftEdge = -pathWidth / 2 + 2;
+            const rightEdge = pathWidth / 2 - 2;
+            const numPoints = 12;
+            // Find the terrain mesh to get its y offset
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
+            const terrainY = terrainMesh ? terrainMesh.position.y : 0;
+            const pts = Array.from({length: numPoints}, (_, i) => {
+                const x = leftEdge + (rightEdge - leftEdge) * (i / (numPoints - 1));
+                const z = Math.sin(i / (numPoints - 1) * Math.PI) * 8;
+                return [x, z];
+            }).map(([x, z]) => new THREE.Vector3(x, hillH(x, z) + terrainY + 0.15, z));
             pathCurve = new THREE.CatmullRomCurve3(pts);
             const tube = new THREE.Mesh(
                 new THREE.TubeGeometry(pathCurve, 100, 0.15 * scale, 8, false),
                 new THREE.MeshLambertMaterial({ color: 0xc4a070 })
             );
             tube.receiveShadow = true; scene3d.add(tube);
+            // No extra y offset, path is on terrain
         }
 
         function mkDog() {
@@ -719,38 +759,67 @@
             tip.position.set(0, 0.22, 0); dogGrp.tail.add(tip);
             dogGrp.scale.set(0.7, 0.7, 0.7);
             scene3d.add(dogGrp);
-            dogGrp.position.copy(pathCurve.getPoint(0));
+            // Place the dog on the path at t=0 (start)
+            const dogStart = pathCurve.getPoint(0);
+            // Find the terrain mesh to get its y offset
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
+            const terrainY = terrainMesh ? terrainMesh.position.y : 0;
+            // Recompute y using terrain height at (x, z)
+            const dogY = hillH(dogStart.x, dogStart.z) + terrainY;
+            dogGrp.position.set(dogStart.x, dogY, dogStart.z);
         }
 
         function mkLocs() {
             const vp = document.getElementById('viewport');
-            locData.forEach(loc => {
-                const p = pathCurve.getPoint(loc.t);
+            // Find the terrain mesh to get its y offset
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
+            const terrainY = terrainMesh ? terrainMesh.position.y : 0;
+            // Place each location on the path at evenly spaced intervals
+            locData.forEach((loc, idx) => {
+                const t = idx / (locData.length - 1);
+                const p = pathCurve.getPoint(t);
+                // Recompute y using terrain height at (x, z)
+                const locY = hillH(p.x, p.z) + terrainY;
                 const disc = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.32, 0.32, 0.06, 12),
                     new THREE.MeshLambertMaterial({ color: 0xffe0b2 })
                 );
-                disc.position.set(p.x, p.y + 0.04, p.z); disc.receiveShadow = true; scene3d.add(disc);
+                disc.position.set(p.x, locY + 0.04, p.z); disc.receiveShadow = true; scene3d.add(disc);
                 const pole = new THREE.Mesh(
                     new THREE.CylinderGeometry(0.025, 0.025, 1.0, 6),
                     new THREE.MeshLambertMaterial({ color: 0x7B5B3A })
                 );
-                pole.position.set(p.x, p.y + 0.55, p.z); scene3d.add(pole);
+                pole.position.set(p.x, locY + 0.55, p.z); scene3d.add(pole);
                 const lbl = document.createElement('div');
                 lbl.className = 'loc-label-3d';
                 lbl.innerHTML = '<span class="loc-icon-3d">' + loc.icon + '</span><span class="loc-tag-3d">' + loc.name + '</span>';
                 lbl.addEventListener('click', () => showLocDetail(loc));
                 vp.appendChild(lbl);
-                locLabels3d.push({ el: lbl, world: new THREE.Vector3(p.x, p.y + 1.3, p.z), loc: loc });
+                locLabels3d.push({ el: lbl, world: new THREE.Vector3(p.x, locY + 1.3, p.z), loc: loc });
             });
         }
 
         function mkTrees() {
             const tg = new THREE.MeshLambertMaterial({ color: 0x2d8a2d });
             const tk = new THREE.MeshLambertMaterial({ color: 0x7B5B3A });
-            [[-9,7],[-7,6],[-3,6],[1,5.5],[5,4],[8,2.5],[-5,-1],[3,-1],[7,-2],[-10,2],[10,-3],[-6,0.5],[1,-0.5],[5,-0.5]]
-            .forEach(([x,z]) => {
-                const y = hillH(x,z);
+            // Find the terrain mesh to get its y offset
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
+            const terrainY = terrainMesh ? terrainMesh.position.y : 0;
+            // Place trees across the full terrain width
+            const treeXs = Array.from({length: 18}, (_, i) => -25 + i * 7); // Spread trees from left to right
+            treeXs.forEach((x, idx) => {
+                const z = -5 + (idx % 8) * 2.5;
+                // Sample the terrain height at (x, z) after translation
+                const y = hillH(x, z) + terrainY + 0.05;
                 const th = 0.4 + Math.random() * 0.3;
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, th, 5), tk);
                 trunk.position.set(x, y + th/2, z); trunk.castShadow = true; scene3d.add(trunk);
@@ -766,7 +835,8 @@
             for (let i = 0; i < 30; i++) {
                 const t = Math.random(), pt = pathCurve.getPoint(t);
                 const ox = (Math.random()-0.5)*2.5, oz = (Math.random()-0.5)*1.5;
-                const fx = pt.x+ox, fz = pt.z+oz, fy = hillH(fx,fz);
+                const fx = pt.x+ox, fz = pt.z+oz;
+                const fy = hillH(fx, fz) + terrainY;
                 const fl = new THREE.Mesh(
                     new THREE.SphereGeometry(0.05+Math.random()*0.03, 6, 6),
                     new THREE.MeshLambertMaterial({ color: fc[Math.floor(Math.random()*fc.length)] })
