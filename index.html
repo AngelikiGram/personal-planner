@@ -1721,6 +1721,9 @@
             
             // Cloud Push
             if (db && auth.currentUser) {
+                const statusEl = document.getElementById('pf-cloud-status');
+                if(statusEl) statusEl.innerText = '☁️ Saving...';
+                
                 db.collection('users').doc(auth.currentUser.uid).set({
                     coins: coins,
                     total: total,
@@ -1729,7 +1732,18 @@
                     customRewards: JSON.stringify(customRewards),
                     profile: profile,
                     lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true });
+                }, { merge: true })
+                .then(() => {
+                    console.log("Cloud Save Success");
+                    if(statusEl) {
+                        statusEl.innerText = '✅ Cloud Synced';
+                        statusEl.style.color = '#34c759';
+                    }
+                })
+                .catch(err => {
+                    console.error("Cloud Save Error", err);
+                    if(statusEl) statusEl.innerText = '⚠️ Save Failed';
+                });
             }
         }
 
