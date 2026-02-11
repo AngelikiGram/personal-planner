@@ -1857,7 +1857,7 @@
                 let isComplete = false;
                 setTimeout(() => {
                     if(!isComplete) {
-                        showSaveIndicator('🐢 Network Slow... (Still converting)');
+                        showSaveIndicator('🐢 Network Slow (Syncing in background...)');
                         if(statusEl) statusEl.innerText = '🐢 Network Slow';
                     }
                 }, 5000);
@@ -1877,7 +1877,7 @@
                     showSaveIndicator('✅ Saved');
                     setTimeout(() => showSaveIndicator(''), 2000);
                     if(statusEl) {
-                        statusEl.innerText = '✅ Cloud Synced';
+                        statusEl.innerText = '✅ Saved';
                         statusEl.style.color = '#34c759';
                     }
                 })
