@@ -429,15 +429,14 @@
         </div>
     </div>
 
-    <div class="main-split" style="display: flex; flex-direction: row; height: 100%; overflow: hidden;">
-        <div class="viewport" id="viewport" style="flex: 4; position: relative;"></div>
-        <div class="content" style="flex: 2; border-left: 1px solid #d1d1d6; border-top: none;">
-            <div class="tabs">
-                <div class="tab active" id="tab-q" onclick="setTab('q')">Quests</div>
-                <div class="tab" id="tab-s" onclick="setTab('s')">Shop</div>
-            </div>
-            <div class="list-container" id="main-list"></div>
+    <div class="viewport" id="viewport"></div>
+
+    <div class="content">
+        <div class="tabs">
+            <div class="tab active" id="tab-q" onclick="setTab('q')">Quests</div>
+            <div class="tab" id="tab-s" onclick="setTab('s')">Shop</div>
         </div>
+        <div class="list-container" id="main-list"></div>
     </div>
 
     <div class="loc-overlay" id="loc-overlay" onclick="if(event.target===this)closeLoc()">
@@ -599,12 +598,6 @@
         // ============ THREE.JS 3D SCENE ============
         let scene3d, cam3d, ren3d, dogGrp, pathCurve, clock3d;
         let locLabels3d = [], targetDogT = 0, currentDogT = 0, sceneReady = false;
-        
-        // Camera controls
-        let camCtrl = { r: 15, th: 0.5, ph: 1.2 }; // radius, theta, phi
-        let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
-        let isDragging = false, lastMouse = { x:0, y:0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
-
         const locData = [
             { icon: '\uD83C\uDFE0', name: 'Home Base', t: 0 },
             { icon: '\uD83C\uDF6B', name: 'Choco Hill', t: 1/7 },
@@ -617,34 +610,26 @@
         ];
 
         function hillH(x, z) {
-            // Mountain shape: Gaussian bell curve
-            const r2 = x*x + z*z;
-            const h = 10 * Math.exp(-r2 / 60); // Max height 10, spread determined by 60
-            // Add some noise for ruggedness
-            const noise = Math.sin(x) * Math.cos(z) * 0.2;
-            return Math.max(0, h + noise);
+            // Flat terrain
+            return 0;
         }
 
         function init3D() {
             const vp = document.getElementById('viewport');
-            // Allow flex layout to control size, but ensure we fill it
-            vp.style.width = '100%';
-            vp.style.height = '100%'; 
-            
-            // Get actual dimensions
-            const W = vp.clientWidth || 800; 
-            const H = vp.clientHeight || 600;
-            
+            // Make the viewport smaller
+            vp.style.width = '600px';
+            vp.style.height = '350px';
+            const W = 600, H = 350;
             scene3d = new THREE.Scene();
             // Add a soft sky blue background
             scene3d.background = new THREE.Color(0xbfdfff);
-            
+            // Remove fog for clarity
+            // scene3d.fog = new THREE.FogExp2(0xaed8f0, 0.015);
             cam3d = new THREE.PerspectiveCamera(48, W / H, 0.1, 200);
-            
-            // Camera position for mountain view - side angle looking up slightly
-            cam3d.position.set(20, 12, 20); 
-            cam3d.lookAt(0, 4, 0); // Look at mid-mountain
-
+            // Centralize camera to the right, frame all locations
+            // Move camera further back and higher for full map view
+            cam3d.position.set(10, 8, 15); // Closer and lower
+            cam3d.lookAt(0, 0, 0); // Center of the map
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0); // transparent
             ren3d.setSize(W, H);
@@ -656,203 +641,66 @@
             vp.appendChild(ren3d.domElement);
             scene3d.add(new THREE.AmbientLight(0xffffff, 0.5));
             const sun = new THREE.DirectionalLight(0xffeedd, 1.0);
-            sun.position.set(10, 20, 10); sun.castShadow = true;
-            sun.shadow.mapSize.set(2048, 2048); // Better shadows
-            sun.shadow.camera.left = -20; sun.shadow.camera.right = 20;
-            sun.shadow.camera.top = 20; sun.shadow.camera.bottom = -20;
+            sun.position.set(8, 15, 5); sun.castShadow = true;
+            sun.shadow.mapSize.set(1024, 1024);
+            sun.shadow.camera.left = -15; sun.shadow.camera.right = 15;
+            sun.shadow.camera.top = 15; sun.shadow.camera.bottom = -15;
             scene3d.add(sun);
             const fill = new THREE.DirectionalLight(0x8899ff, 0.3);
             fill.position.set(-5, 3, -5); scene3d.add(fill);
-            mkHill(); mkPath(); mkDog(); mkLocs(); mkTrees(); /* no clouds */
+            mkHill(true); mkPath(true); mkDog(); mkLocs(); mkTrees(); /* no clouds */
             clock3d = new THREE.Clock(); sceneReady = true;
             window.addEventListener('resize', () => {
                 const w = vp.clientWidth, h = vp.clientHeight;
                 cam3d.aspect = w / h; cam3d.updateProjectionMatrix(); ren3d.setSize(w, h);
             });
-            
-            // Mouse / Touch controls
-            const canvas = ren3d.domElement;
-            const onDown = (x, y, btn) => { 
-                isDragging = true; 
-                lastMouse = { x, y }; 
-                // Button 1 (middle) or Shift+Left for pan
-                dragMode = (btn === 1) ? 'pan' : 'rotate';
-            };
-            const onMove = (x, y) => {
-                if (!isDragging) return;
-                const dx = (x - lastMouse.x);
-                const dy = (y - lastMouse.y);
-                
-                if (dragMode === 'rotate') {
-                    // Adjust theta/phi OFFSET relative to the automatic dog tracking
-                    // We modify camCtrl.th (which is now acting as an offset to dogAngle)
-                    camCtrl.th -= dx * 0.005; 
-                    camCtrl.ph = Math.max(0.1, Math.min(Math.PI/2 - 0.1, camCtrl.ph - dy * 0.005)); 
-                } else if (dragMode === 'pan') {
-                    // Pan relative to camera view
-                    const sensitivity = camCtrl.r * 0.002;
-
-                    // Simplified: Move Right/Left relative to camera
-                    const vRight = new THREE.Vector3(1, 0, 0).applyQuaternion(cam3d.quaternion);
-                    const vUp = new THREE.Vector3(0, 1, 0).applyQuaternion(cam3d.quaternion);
-                    
-                    const dV = vRight.multiplyScalar(-dx * sensitivity).add(vUp.multiplyScalar(dy * sensitivity));
-                    
-                    camOffset.add(dV);
-                    
-                    // Limits
-                    camOffset.x = Math.max(-20, Math.min(20, camOffset.x));
-                    camOffset.y = Math.max(-10, Math.min(20, camOffset.y));
-                    camOffset.z = Math.max(-20, Math.min(20, camOffset.z));
-                }
-                
-                lastMouse = { x, y };
-            };
-            const onUp = () => { isDragging = false; };
-            
-            canvas.addEventListener('mousedown', e => onDown(e.clientX, e.clientY, e.button));
-            window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
-            window.addEventListener('mouseup', onUp);
-            canvas.addEventListener('touchstart', e => { 
-                if(e.touches.length===1) onDown(e.touches[0].clientX, e.touches[0].clientY, 0); 
-            }, {passive:false});
-            window.addEventListener('touchmove', e => { if(isDragging && e.touches.length===1) { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); }}, {passive:false});
-            window.addEventListener('touchend', onUp);
-            canvas.addEventListener('wheel', e => {
-                e.preventDefault();
-                camCtrl.r = Math.max(5, Math.min(30, camCtrl.r + e.deltaY * 0.01));
-            }, {passive:false});
-            
-            // Re-frame button
-            const btn = document.createElement('div');
-            btn.innerHTML = '🎯';
-            btn.style.cssText = 'position:absolute; bottom:20px; right:20px; font-size:24px; cursor:pointer; background:white; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 10px rgba(0,0,0,0.2); z-index:100;';
-            btn.title = "Re-frame on Dog";
-            btn.onclick = () => {
-                camOffset.set(0, 0, 0);
-                camCtrl = { r: 15, th: 0.5, ph: 1.2 };
-            };
-            vp.appendChild(btn);
-
             animLoop();
         }
 
         function mkHill() {
-            // Create a subdivided plane for the mountain
-            // 40x40 size, with lots of segments for smooth height
-            const geo = new THREE.PlaneGeometry(40, 40, 64, 64);
-            geo.rotateX(-Math.PI / 2); // Lay flat on XZ plane
-
-            const posAttribute = geo.attributes.position;
-            const vertex = new THREE.Vector3();
-
-            for (let i = 0; i < posAttribute.count; i++) {
-                vertex.fromBufferAttribute(posAttribute, i);
-                
-                const dist = Math.sqrt(vertex.x*vertex.x + vertex.z*vertex.z);
-                
-                // Construct a rounded island logic:
-                // If the vertex is far from center, drop it down to underwater to hide square corners of plane
-                if (dist > 19) {
-                    vertex.y = -5;
-                } else {
-                    // Apply height function
-                    let h = hillH(vertex.x, vertex.z);
-                    
-                    // Smooth taper at the edge to ensure no jagged drops
-                    if (dist > 17) {
-                        // Blend from h to slightly negative between r=17 and r=19
-                        const t = (dist - 17) / 2;
-                        h = h * (1 - t) - 1.0 * t;
-                    }
-                    vertex.y = h;
-                }
-                
-                // Update the attribute
-                posAttribute.setY(i, vertex.y);
-            }
-            
-            // Remove faces that are entirely underwater to create a round island shape
-            const oldIndices = geo.index.array;
-            const newIndices = [];
-            const waterLevel = -0.05; // Matches the water plane height
-            
-            for (let i = 0; i < oldIndices.length; i += 3) {
-                const a = oldIndices[i];
-                const b = oldIndices[i+1];
-                const c = oldIndices[i+2];
-                
-                const ya = posAttribute.getY(a);
-                const yb = posAttribute.getY(b);
-                const yc = posAttribute.getY(c);
-                
-                // Keep the face if at least one vertex is above (or near) the water level
-                // We use a small epsilon -0.1 to allow faces that are just crossing the surface
-                if (ya >= waterLevel - 0.01 || yb >= waterLevel - 0.01 || yc >= waterLevel - 0.01) {
-                    newIndices.push(a, b, c);
-                }
-            }
-            geo.setIndex(newIndices);
-            
-            geo.computeVertexNormals(); // Recalculate normals for lighting
-
-            const mat = new THREE.MeshLambertMaterial({ 
-                color: 0x5cb338,
-                side: THREE.DoubleSide
-            });
-            const mesh = new THREE.Mesh(geo, mat);
-            mesh.receiveShadow = true; 
-            mesh.name = "ground_mesh";
-            scene3d.add(mesh);
-            
-            // Optional: Add a water plane at y=0 or slightly below
-            const waterGeo = new THREE.CircleGeometry(30, 32);
-            waterGeo.rotateX(-Math.PI / 2);
-            const waterMat = new THREE.MeshPhongMaterial({ 
-                color: 0x0099ff, 
-                transparent: true, 
-                opacity: 0.9,
-                shininess: 80
-            });
-            const water = new THREE.Mesh(waterGeo, waterMat);
-            water.position.y = -0.05; // Water level
-            scene3d.add(water);
+            // If scaleUp is true, scale the map up to fill the viewport
+            let scaleUp = arguments[0] === true;
+            // Make the terrain flat (2D)
+            const geo = new THREE.PlaneGeometry(scaleUp ? 18 : 7, scaleUp ? 12 : 5, 2, 2);
+            geo.rotateX(-Math.PI / 2);
+            var var_y = -2; // Raise the terrain for a smaller screen
+            // Flat: set all y to 0
+            const pos = geo.attributes.position;
+            for (let v = 0; v < pos.count; v++) pos.setY(v, 0);
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x5cb338 }));
+            mesh.position.y = var_y;
+            mesh.receiveShadow = true; scene3d.add(mesh);
+            // No rainbow
         }
 
         function mkPath() {
-            // Spiral path up the mountain
-            const numPoints = 100;
-            const turns = 2.5; // Number of times to wrap around
-            const startRadius = 14;
-            const endRadius = 1;
-            
-            const pts = [];
-            for(let i=0; i<numPoints; i++) {
-                const t = i / (numPoints - 1);
-                // Radius gets smaller as we go up
-                const r = startRadius * (1 - t) + endRadius * t;
-                // Angle spirals around
-                const angle = t * Math.PI * 2 * turns; 
-                
-                const x = Math.cos(angle) * r;
-                const z = Math.sin(angle) * r;
-                
-                // Get terrain height
-                const y = hillH(x, z);
-                
-                // Offset slightly above terrain
-                pts.push(new THREE.Vector3(x, y + 0.2, z));
-            }
-            
+            // If scaleUp is true, scale the path up to match the hill
+            let scaleUp = arguments[0] === true;
+            const scale = scaleUp ? 1.45 : 1;
+            // Make the path a bit longer and span the terrain
+            const pathWidth = scaleUp ? 28 : 10;
+            const leftEdge = -pathWidth / 2 + 2;
+            const rightEdge = pathWidth / 2 - 2;
+            const numPoints = 12;
+            // Find the terrain mesh to get its y offset
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
+            const terrainY = terrainMesh ? terrainMesh.position.y : 0;
+            const pts = Array.from({length: numPoints}, (_, i) => {
+                const x = leftEdge + (rightEdge - leftEdge) * (i / (numPoints - 1));
+                const z = Math.sin(i / (numPoints - 1) * Math.PI) * 8;
+                return [x, z];
+            }).map(([x, z]) => new THREE.Vector3(x, hillH(x, z) + terrainY + 0.15, z));
             pathCurve = new THREE.CatmullRomCurve3(pts);
-            
-            // Draw the path using TubeGeometry
             const tube = new THREE.Mesh(
-                new THREE.TubeGeometry(pathCurve, 200, 0.4, 8, false),
+                new THREE.TubeGeometry(pathCurve, 100, 0.15 * scale, 8, false),
                 new THREE.MeshLambertMaterial({ color: 0xc4a070 })
             );
-            tube.receiveShadow = true; 
-            scene3d.add(tube);
+            tube.receiveShadow = true; scene3d.add(tube);
+            // No extra y offset, path is on terrain
         }
 
         function mkDog() {
@@ -871,10 +719,8 @@
             const nose = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), nos);
             nose.position.set(0.92, 0.82, 0); dogGrp.add(nose);
             [0.14, -0.14].forEach(z => {
-                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), wht);
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), nos);
                 eye.position.set(0.78, 0.95, z); dogGrp.add(eye);
-                const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), blk);
-                pupil.position.set(0.82, 0.95, z); dogGrp.add(pupil);
             });
             [-1, 1].forEach(s => {
                 const ear = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.1), blk);
@@ -897,14 +743,24 @@
             scene3d.add(dogGrp);
             // Place the dog on the path at t=0 (start)
             const dogStart = pathCurve.getPoint(0);
-            dogGrp.position.copy(dogStart);
-            dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
+            // Find the terrain mesh to get its y offset
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
+            const terrainY = terrainMesh ? terrainMesh.position.y : 0;
+            // Recompute y using terrain height at (x, z)
+            const dogY = hillH(dogStart.x, dogStart.z) + terrainY;
+            dogGrp.position.set(dogStart.x, dogY, dogStart.z);
         }
 
         function mkLocs() {
             const vp = document.getElementById('viewport');
             // Find the terrain mesh to get its y offset
-            const terrainMesh = scene3d.getObjectByName("ground_mesh");
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
             const terrainY = terrainMesh ? terrainMesh.position.y : 0;
             // Place each location on the path at evenly spaced intervals
             locData.forEach((loc, idx) => {
@@ -934,65 +790,34 @@
         function mkTrees() {
             const tg = new THREE.MeshLambertMaterial({ color: 0x2d8a2d });
             const tk = new THREE.MeshLambertMaterial({ color: 0x7B5B3A });
-            const terrainMesh = scene3d.getObjectByName("ground_mesh");
+            // Find the terrain mesh to get its y offset
+            let terrainMesh = null;
+            scene3d.traverse(obj => {
+                if (obj.isMesh && obj.geometry && obj.geometry.type === 'PlaneGeometry') terrainMesh = obj;
+            });
             const terrainY = terrainMesh ? terrainMesh.position.y : 0;
-            
-            const pathPts = pathCurve.getPoints(100);
-            let treesPlaced = 0, attempts = 0;
-            
-            while(treesPlaced < 60 && attempts < 1000) {
-                attempts++;
-                const angle = Math.random() * Math.PI * 2;
-                const r = Math.random() * 19;
-                const x = Math.cos(angle) * r;
-                const z = Math.sin(angle) * r;
-                
-                let safe = true;
-                // Avoid center top
-                if (x*x + z*z < 2) continue;
-                
-                // Avoid water
-                if (hillH(x, z) < 0.2) continue;
-
-                // Path collision
-                for(let p of pathPts) {
-                    if ((p.x-x)**2 + (p.z-z)**2 < 2.5) { safe = false; break; }
-                }
-                if(!safe) continue;
-                
-                // Location collision
-                for(let l of locLabels3d) {
-                    if ((l.world.x-x)**2 + (l.world.z-z)**2 < 6) { safe = false; break; }
-                }
-                if(!safe) continue;
-
-                treesPlaced++;
+            // Place trees across the full terrain width
+            const treeXs = Array.from({length: 18}, (_, i) => -25 + i * 7); // Spread trees from left to right
+            treeXs.forEach((x, idx) => {
+                const z = -5 + (idx % 8) * 2.5;
+                // Sample the terrain height at (x, z) after translation
                 const y = hillH(x, z) + terrainY + 0.05;
                 const th = 0.4 + Math.random() * 0.3;
-                const treeGrp = new THREE.Group();
-                
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, th, 5), tk);
-                trunk.position.set(0, th/2, 0); trunk.castShadow = true; treeGrp.add(trunk);
-                
+                trunk.position.set(x, y + th/2, z); trunk.castShadow = true; scene3d.add(trunk);
                 const layers = 2 + Math.floor(Math.random() * 2);
                 for (let l = 0; l < layers; l++) {
-                    const tr = 0.45 - l * 0.1 + Math.random() * 0.08;
-                    const thh = 0.55 + Math.random() * 0.15;
-                    const c = new THREE.Mesh(new THREE.ConeGeometry(tr, thh, 6), tg);
-                    c.position.set(0, th + l * 0.3 + 0.15, 0); c.castShadow = true; treeGrp.add(c);
+                    const r = 0.45 - l * 0.1 + Math.random() * 0.08;
+                    const h = 0.55 + Math.random() * 0.15;
+                    const c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), tg);
+                    c.position.set(x, y + th + l * 0.3 + 0.15, z); c.castShadow = true; scene3d.add(c);
                 }
-                treeGrp.position.set(x, y, z);
-                scene3d.add(treeGrp);
-            }
-
+            });
             const fc = [0xff69b4, 0xff2d55, 0xffeb3b, 0xff9800, 0xba68c8];
             for (let i = 0; i < 30; i++) {
                 const t = Math.random(), pt = pathCurve.getPoint(t);
                 const ox = (Math.random()-0.5)*2.5, oz = (Math.random()-0.5)*1.5;
                 const fx = pt.x+ox, fz = pt.z+oz;
-                // Very simple check for flowers
-                if (Math.abs(ox) < 0.3 && Math.abs(oz) < 0.3) continue; // Don't put on path center
-
                 const fy = hillH(fx, fz) + terrainY;
                 const fl = new THREE.Mesh(
                     new THREE.SphereGeometry(0.05+Math.random()*0.03, 6, 6),
@@ -1026,8 +851,6 @@
             if (pathCurve && dogGrp) {
                 const pos = pathCurve.getPoint(currentDogT);
                 dogGrp.position.copy(pos);
-                dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
-                
                 const lt = Math.min(currentDogT + 0.01, 1);
                 const lp = pathCurve.getPoint(lt);
                 const dir = new THREE.Vector3().subVectors(lp, pos);
@@ -1048,41 +871,9 @@
                     lbl.style.top = ((-v.y*0.5+0.5)*H) + 'px';
                 } else { lbl.style.display = 'none'; }
             });
-            
-            // Camera follow dog with orbit controls
-            if (dogGrp) {
-                const target = dogGrp.position.clone().add(camOffset);
-                target.y += 1.5; // Look slightly above dog
-                
-                // Calculate angle of dog relative to center (0,0) to keep camera "outside"
-                // atan2(x, z) gives the angle from the Z axis.
-                // We add PI/2 to align with how we want to view it (or just use as base)
-                // Actually, standard math atan2(z, x).
-                // Let's take Cartesian:
-                // If dog is at (10, 0) -> Angle 0. Cam should be at (10+r, ...).
-                // If dog is at (0, 10) -> Angle 90. Cam should be at (..., 10+r).
-                // dogAngle = atan2(z, x).
-                const dogAngle = Math.atan2(dogGrp.position.z, dogGrp.position.x);
-                
-                // The camCtrl.th is now an OFFSET from the dog's radial angle
-                // We use (dogAngle + camCtrl.th) to orbit around the dog, 
-                // but 0 offset means "radially outward"
-                const totalAngle = dogAngle + camCtrl.th;
-                
-                const cx = camCtrl.r * Math.cos(totalAngle) * Math.sin(camCtrl.ph);
-                const cz = camCtrl.r * Math.sin(totalAngle) * Math.sin(camCtrl.ph);
-                const cy = camCtrl.r * Math.cos(camCtrl.ph);
-                
-                // Note: Spherical to Cartesian usually:
-                // y = r * cos(phi) (if phi is from up/pole)
-                // x = r * sin(phi) * cos(theta)
-                // z = r * sin(phi) * sin(theta)
-                // Using this standard mapping to be safe
-                
-                cam3d.position.copy(target).add(new THREE.Vector3(cx, cy, cz));
-                cam3d.lookAt(target);
-            }
-            
+            cam3d.position.x = 1 + Math.sin(el * 0.1) * 0.08;
+            cam3d.position.y = 7.5 + Math.sin(el * 0.15) * 0.04;
+            cam3d.lookAt(1, 0, 2);
             ren3d.render(scene3d, cam3d);
         }
 
