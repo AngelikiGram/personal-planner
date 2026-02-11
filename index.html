@@ -408,6 +408,52 @@
         .reset-btns button { flex: 1; padding: 13px; border: none; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; }
         .reset-btn-cancel { background: #f2f2f7; color: #333; }
         .reset-btn-confirm { background: #ff3b30; color: white; }
+        /* Responsive & Main Layout Overrides */
+        .main-split {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+            overflow: hidden;
+        }
+        .viewport {
+            flex: 4;
+            position: relative;
+            overflow: hidden;
+            background: transparent;
+        }
+        .content {
+            flex: 2;
+            background: #fff;
+            border-left: 1px solid #d1d1d6;
+            border-top: none;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Mobile Optimization */
+        @media (max-width: 800px) {
+            .main-split {
+                flex-direction: column;
+            }
+            .viewport {
+                flex: 1; /* Adjusts flex ratio for mobile */
+                min-height: 40vh; /* Ensure 3D view is substantial */
+            }
+            .content {
+                flex: 1.5; /* Give more space to content on mobile */
+                border-left: none;
+                border-top: 1px solid #d1d1d6;
+            }
+            /* Adjust modals for smaller screens */
+            .modal-content, .cat-bubble, .reset-modal, .ios-input {
+                width: 90% !important;
+                max-width: 320px !important;
+            }
+            .ios-input {
+                font-size: 16px; /* prevent zoom on focus on iOS */
+            }
+        }
     </style>
 </head>
 <body>
