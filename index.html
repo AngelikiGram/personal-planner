@@ -466,7 +466,7 @@
     <div id="login">
         <div style="font-size: 80px; margin-bottom: 20px;">🐕</div>
         <h2 style="font-weight: 900;">My Quest</h2>
-        <input type="password" id="pass" class="ios-input" placeholder="Enter 'Louis' or Profile Name..." oninput="this.value = this.value.toLowerCase()"> 
+        <input type="password" id="pass" class="ios-input" placeholder="World's Best Boarder Collie" oninput="this.value = this.value.toLowerCase()"> 
         <!-- "Password or Profile Name"> -->
         <button class="btn-ios" style="width: 250px; padding: 15px;" onclick="enterApp()">Unlock Adventure</button>
         <p style="margin-top: 20px; color: #8e8e93; font-size: 13px; max-width: 260px; text-align: center; line-height: 1.4;">
@@ -1518,27 +1518,21 @@
 
         function setupSync(uid) {
             userRef = db.collection('users').doc(uid);
-            // Listen for changes
-            unsubscribe = userRef.onSnapshot(doc => {
-                // Remove loader nicely
+            // Listen for changes with Metadata to distinguish Cache vs Server
+            unsubscribe = userRef.onSnapshot({ includeMetadataChanges: true }, doc => {
+                const isCache = doc.metadata.fromCache;
+                console.log("Snapshot from:", isCache ? "Cache" : "Server");
+                
                 const loader = document.getElementById('cloud-loader');
-                if(loader) {
-                    loader.innerHTML = '<div style="font-size:50px;">✅</div><div>Synced!</div>';
-                    // clear the lock immediately but remove visual slowly
-                    isWaitingForSync = false;
-                    setTimeout(() => loader.remove(), 800);
-                } else {
-                    isWaitingForSync = false;
-                }
-
+                
+                // 1. DATA PROCESSING (Always update UI with what we have)
                 if (doc.exists) {
                     const d = doc.data();
-                    console.log("Cloud data received:", d);
                     
                     if(d.coins !== undefined) coins = d.coins;
                     if(d.total !== undefined) total = d.total;
                     
-                    try { if(d.vouchers) vouchers = JSON.parse(d.vouchers); } catch(e){ console.error("VC parse err",e); }
+                    try { if(d.vouchers) vouchers = JSON.parse(d.vouchers); } catch(e){}
                     
                     // Safe Parse for Custom Items
                     try { 
@@ -1546,14 +1540,14 @@
                             const parsed = JSON.parse(d.customQuests);
                             if(Array.isArray(parsed)) customQuests = parsed;
                         }
-                    } catch(e){ console.error("CQ parse err",e); }
+                    } catch(e){}
 
                     try { 
                         if(d.customRewards) {
                             const parsed = JSON.parse(d.customRewards);
                             if(Array.isArray(parsed)) customRewards = parsed;
                         }
-                    } catch(e){ console.error("CR parse err",e); }
+                    } catch(e){}
                     
                     if(d.profile) profile = d.profile;
                     
@@ -1566,22 +1560,60 @@
                     
                     render();
                     document.getElementById('header-avatar').innerText = profile.avatar;
-                    // Update cloud status
-                    let cloudStatus = document.getElementById('pf-cloud-status');
-                    if(cloudStatus) {
-                        cloudStatus.innerText = '✅ Synced: ' + (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : "Profile");
-                        cloudStatus.style.color = '#34c759';
+                }
+
+                // 2. LOCK LOGIC (Prevent overwrite until SERVER data arrives)
+                if (loader) {
+                    if (isCache) {
+                        // We have cached data, but waiting for server confirmation
+                        // Changing text so user knows we are checking
+                        const txt = loader.querySelector('div:last-child');
+                        if(txt) txt.innerText = "Verifying with Server...";
+                        
+                        // Fallback: If server doesn't respond in 5s, assume offline and unlock
+                        if(!window.syncFallbackTimer) {
+                            window.syncFallbackTimer = setTimeout(() => {
+                                const l = document.getElementById('cloud-loader');
+                                if(l) {
+                                    l.remove();
+                                    isWaitingForSync = false;
+                                    console.warn("Server timed out, using cache.");
+                                    const status = document.getElementById('pf-cloud-status');
+                                    if(status) {
+                                        status.innerText = '⚠️ Offline Mode (Cached)';
+                                        status.style.color = '#ffcc00';
+                                    }
+                                }
+                            }, 5000);
+                        }
+                    } else {
+                        // Server Data Received! or Confirmed Non-Existence
+                        if(window.syncFallbackTimer) clearTimeout(window.syncFallbackTimer);
+                        
+                        loader.innerHTML = '<div style="font-size:60px;">✅</div><div>Synced!</div>';
+                        isWaitingForSync = false;
+                        setTimeout(() => loader.remove(), 800);
                     }
                 } else {
-                    // First time: push local to cloud
+                    // Runtime update (background) - ensure lock is off
+                    isWaitingForSync = false; 
+                }
+                
+                // Update Badge
+                let cloudStatus = document.getElementById('pf-cloud-status');
+                if(cloudStatus && !isCache && doc.exists) {
+                    cloudStatus.innerText = '✅ Synced: ' + (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : "Profile");
+                    cloudStatus.style.color = '#34c759';
+                }
+
+                if (!doc.exists && !isCache) {
+                    // Server confirms no data exists -> First Save
                     save(); 
                 }
             }, err => {
-                // If sync fails, release the lock so they can at least play
                 console.error("Sync failed", err);
                 isWaitingForSync = false;
-                if(loader) loader.innerHTML = '⚠️ Sync Error (Offline?)';
-                setTimeout(() => { if(loader) loader.remove(); }, 2000);
+                if(document.getElementById('cloud-loader')) document.getElementById('cloud-loader').remove();
             });
         }
         
