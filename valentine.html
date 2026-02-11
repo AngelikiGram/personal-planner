@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>My Boutique 🎀</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ios-pink: #ff2d55;
+            --grass: #9de64e;
+            --path: #e3c18d;
+            --path-depth: #c4a484;
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background-color: #f2f2f7;
+            display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+        }
+
+        /* --- iOS Header --- */
+        .header {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 0.5px solid #d1d1d6;
+            z-index: 1000;
+        }
+
+        .rank-pill {
+            background: var(--ios-pink); color: white;
+            padding: 6px 14px; border-radius: 20px;
+            font-size: 11px; font-weight: 800;
+            box-shadow: 0 4px 10px rgba(255, 45, 85, 0.3);
+        }
+
+        .coin-display { font-weight: 900; color: #ff9500; font-size: 18px; }
+
+        /* --- 3D HILL VIEWPORT --- */
+        .viewport {
+            flex: 2.2;
+            overflow: hidden;
+            position: relative;
+            background: transparent;
+        }
+        .viewport canvas { display: block; }
+        .loc-label-3d {
+            position: absolute;
+            transform: translate(-50%, -100%);
+            text-align: center;
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 5;
+            transition: transform 0.15s;
+        }
+        .loc-label-3d:active { transform: translate(-50%, -100%) scale(0.9); }
+        .loc-icon-3d {
+            font-size: 22px;
+            display: block;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+        }
+        .loc-tag-3d {
+            background: rgba(255,255,255,0.92);
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-size: 8px;
+            font-weight: bold;
+            border: 1.5px solid #333;
+            white-space: nowrap;
+            display: inline-block;
+            backdrop-filter: blur(4px);
+        }
+        .loc-tag-3d.unlocked { border-color: var(--ios-pink); background: rgba(255,230,238,0.95); }
+        .loc-tag-3d.locked { opacity: 0.5; }
+
+        /* Location Detail Modal */
+        .loc-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 3000;
+            display: none; align-items: flex-end; justify-content: center;
+        }
+        .loc-overlay.show { display: flex; }
+        .loc-modal {
+            background: white; border-radius: 22px 22px 0 0; padding: 24px;
+            width: 100%; max-width: 420px; max-height: 65vh;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+            animation: slideUp 0.3s ease-out;
+        }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .loc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+        .loc-header .loc-h-icon { font-size: 42px; }
+        .loc-header .loc-h-info h3 { margin: 0; font-weight: 900; font-size: 18px; }
+        .loc-header .loc-h-info .loc-h-status { font-size: 11px; font-weight: 700; }
+        .loc-h-status.unlocked { color: #34c759; }
+        .loc-h-status.locked { color: #ff3b30; }
+        .loc-activities { overflow-y: auto; max-height: 35vh; }
+        .loc-act-card {
+            background: #f2f2f7; border-radius: 14px; padding: 12px 14px;
+            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .loc-act-card .la-info { font-weight: 700; font-size: 14px; }
+        .loc-act-card .la-desc { font-size: 11px; color: #8e8e93; }
+        .loc-act-card .la-reward { color: #ff9500; font-weight: 800; font-size: 12px; }
+        .loc-act-btn { background: var(--ios-pink); color: white; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
+        .loc-act-btn:disabled { background: #d1d1d6; }
+        .loc-close {
+            display: block; width: 100%; margin-top: 12px; background: none; border: none;
+            color: var(--ios-pink); font-weight: 800; font-size: 15px; cursor: pointer; text-align: center;
+        }
+
+        /* Profile overlay */
+        .profile-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 3000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .profile-overlay.show { display: flex; }
+        .profile-modal {
+            background: white; border-radius: 22px; padding: 24px;
+            width: 300px; max-height: 80vh; overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        .profile-avatar {
+            width: 80px; height: 80px; border-radius: 50%;
+            background: var(--ios-pink); display: flex; align-items: center; justify-content: center;
+            font-size: 40px; margin: 0 auto 12px;
+            box-shadow: 0 4px 15px rgba(255,45,85,0.3);
+        }
+        .profile-name { font-weight: 900; font-size: 20px; margin-bottom: 4px; }
+        .profile-bio { font-size: 13px; color: #8e8e93; margin-bottom: 16px; }
+        .profile-stats { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+        .pstat {
+            flex: 1; background: #f2f2f7; border-radius: 14px; padding: 10px 6px;
+            text-align: center;
+        }
+        .pstat .pstat-val { font-weight: 900; font-size: 18px; color: var(--ios-pink); }
+        .pstat .pstat-lbl { font-size: 10px; color: #8e8e93; font-weight: 600; }
+        .profile-section { text-align: left; margin-bottom: 14px; }
+        .profile-section label { font-weight: 700; font-size: 12px; color: #8e8e93; display: block; margin-bottom: 4px; }
+        .profile-section input, .profile-section textarea {
+            width: 100%; box-sizing: border-box;
+            padding: 10px; border-radius: 12px; border: 1px solid #ddd;
+            font-size: 14px; font-family: 'Outfit', sans-serif;
+        }
+        .profile-section textarea { resize: none; height: 60px; }
+        .avatar-picker { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; }
+        .avatar-opt {
+            width: 42px; height: 42px; border-radius: 50%; border: 2px solid #ddd;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; cursor: pointer; background: white;
+        }
+        .avatar-opt.selected { border-color: var(--ios-pink); background: #fff0f3; }
+        .profile-save { background: var(--ios-pink); color: white; border: none; padding: 12px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; width: 100%; margin-top: 6px; }
+        .profile-close { background: none; border: none; color: var(--ios-pink); font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
+
+        /* --- CONTENT & SHOP --- */
+        .content {
+            flex: 1; background: #fff;
+            border-top: 1px solid #d1d1d6;
+            display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+
+        .tabs { display: flex; background: #f9f9f9; border-bottom: 0.5px solid #d1d1d6; }
+        .tab { flex: 1; padding: 12px 4px; text-align: center; font-weight: 700; color: #8e8e93; font-size: 13px; cursor: pointer; }
+        .tab.active { color: var(--ios-pink); border-bottom: 3px solid var(--ios-pink); }
+
+        .list-container { flex: 1; overflow-y: auto; padding: 15px; }
+        .card {
+            background: #f2f2f7; border-radius: 18px; padding: 16px; margin-bottom: 12px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .btn-ios {
+            background: var(--ios-pink); color: white; border: none;
+            padding: 10px 20px; border-radius: 12px; font-weight: 700;
+        }
+        .btn-ios:disabled { background: #d1d1d6; }
+
+        /* Rank Modal */
+        .rank-pill { cursor: pointer; }
+        .rank-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 3000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .rank-overlay.show { display: flex; }
+        .rank-modal {
+            background: white; border-radius: 20px; padding: 24px;
+            width: 280px; max-height: 70vh; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column;
+        }
+        .rank-modal h3 { margin: 0 0 16px; font-weight: 900; font-size: 18px; }
+        #rank-list { overflow-y: auto; flex: 1; }
+        .rank-row {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; border-radius: 14px; margin-bottom: 8px;
+            background: #f2f2f7; font-weight: 700; font-size: 14px;
+        }
+        .rank-row.current { background: var(--ios-pink); color: white; }
+        .rank-row .rank-icon { font-size: 22px; }
+        .rank-row .rank-threshold { font-size: 11px; font-weight: 400; margin-left: auto; opacity: 0.7; }
+        .rank-close {
+            margin-top: 14px; background: none; border: none;
+            color: var(--ios-pink); font-weight: 800; font-size: 16px; cursor: pointer;
+        }
+
+        /* Voucher Modal */
+        .voucher-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 3000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .voucher-overlay.show { display: flex; }
+        .voucher-modal {
+            background: white; border-radius: 20px; padding: 24px;
+            width: 300px; max-height: 70vh; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            display: flex; flex-direction: column;
+        }
+        .voucher-modal h3 { margin: 0 0 16px; font-weight: 900; font-size: 18px; }
+        .voucher-list { overflow-y: auto; flex: 1; }
+        .voucher-card {
+            background: linear-gradient(135deg, #fff0f3, #ffe0e6);
+            border: 2px dashed var(--ios-pink);
+            border-radius: 14px; padding: 14px; margin-bottom: 10px;
+            text-align: left; position: relative;
+        }
+        .voucher-card .v-title { font-weight: 800; font-size: 15px; }
+        .voucher-card .v-date { font-size: 11px; color: #8e8e93; margin-top: 4px; }
+        .voucher-card .v-stamp {
+            position: absolute; top: 10px; right: 12px;
+            font-size: 24px;
+        }
+        .voucher-card.redeemed {
+            background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
+            border-color: #ccc;
+            opacity: 0.65;
+        }
+        .voucher-card.redeemed .v-title { text-decoration: line-through; }
+        .voucher-card .v-status {
+            display: inline-block; margin-top: 8px;
+            font-size: 11px; font-weight: 800; padding: 4px 10px;
+            border-radius: 8px;
+        }
+        .voucher-card .v-status.open {
+            background: var(--ios-pink); color: white; cursor: pointer;
+        }
+        .voucher-card .v-status.used {
+            background: #d1d1d6; color: #666;
+        }
+        .voucher-empty { color: #8e8e93; padding: 30px 0; font-size: 14px; }
+        .voucher-close {
+            margin-top: 14px; background: none; border: none;
+            color: var(--ios-pink); font-weight: 800; font-size: 16px; cursor: pointer;
+        }
+
+        /* Add Quest Modal */
+        .addq-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 3000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .addq-overlay.show { display: flex; }
+        .addq-modal {
+            background: white; border-radius: 20px; padding: 24px;
+            width: 290px; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .addq-modal h3 { margin: 0 0 16px; font-weight: 900; font-size: 18px; }
+        .addq-modal input {
+            width: 100%; box-sizing: border-box;
+            padding: 12px; border-radius: 12px; border: 1px solid #ddd;
+            font-size: 15px; font-family: 'Outfit', sans-serif;
+            margin-bottom: 10px;
+        }
+        .addq-modal input[type=number] { -moz-appearance: textfield; }
+        .addq-btns { display: flex; gap: 10px; margin-top: 6px; }
+        .addq-btns button { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; }
+        .addq-btns .addq-save { background: var(--ios-pink); color: white; }
+        .addq-btns .addq-cancel { background: #f2f2f7; color: #333; }
+
+        .add-quest-btn {
+            width: 100%; padding: 14px; border: 2px dashed #d1d1d6;
+            border-radius: 18px; background: none;
+            font-weight: 700; font-size: 14px; color: #8e8e93;
+            cursor: pointer; margin-bottom: 12px;
+        }
+        .add-quest-btn:active { background: #f2f2f7; }
+
+        /* Login Screen */
+        #login {
+            position: fixed; inset: 0; background: #fff; z-index: 2000;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .ios-input { padding: 15px; border-radius: 15px; border: 1px solid #ddd; width: 250px; text-align: center; font-size: 18px; margin-bottom: 20px; }
+
+        /* Black Cat */
+        @keyframes cat-appear {
+            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
+            50% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0); opacity: 1; }
+        }
+        @keyframes cat-eyes {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0; }
+        }
+        @keyframes cat-shake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-8px) rotate(-2deg); }
+            40% { transform: translateX(8px) rotate(2deg); }
+            60% { transform: translateX(-6px) rotate(-1deg); }
+            80% { transform: translateX(6px) rotate(1deg); }
+        }
+        @keyframes cat-vanish {
+            0% { transform: scale(1) rotate(0); opacity: 1; }
+            100% { transform: scale(0) rotate(40deg); opacity: 0; }
+        }
+        @keyframes penalty-flash {
+            0%, 100% { background: rgba(0,0,0,0.5); }
+            50% { background: rgba(255,0,0,0.35); }
+        }
+        .cat-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 4000;
+            display: none; align-items: center; justify-content: center;
+            flex-direction: column;
+        }
+        .cat-overlay.show { display: flex; }
+        .cat-overlay.penalty { animation: penalty-flash 0.3s 3; }
+        .cat-modal {
+            text-align: center;
+            animation: cat-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .cat-modal.leaving {
+            animation: cat-vanish 0.4s ease-in forwards;
+        }
+        .cat-emoji {
+            font-size: 100px;
+            display: block;
+            filter: drop-shadow(0 10px 25px rgba(0,0,0,0.5));
+            animation: cat-eyes 4s infinite;
+        }
+        .cat-bubble {
+            background: white; border-radius: 20px; padding: 20px 24px;
+            margin-top: 16px; max-width: 280px;
+            box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+            position: relative;
+        }
+        .cat-bubble::before {
+            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            border-left: 10px solid transparent; border-right: 10px solid transparent;
+            border-bottom: 12px solid white;
+        }
+        .cat-bubble .cat-q {
+            font-weight: 800; font-size: 16px; color: #1a1a1a;
+            margin-bottom: 16px; line-height: 1.4;
+        }
+        .cat-btns { display: flex; gap: 10px; }
+        .cat-btns button {
+            flex: 1; padding: 14px; border: none; border-radius: 14px;
+            font-weight: 800; font-size: 15px; cursor: pointer;
+        }
+        .cat-btn-yes { background: #34c759; color: white; }
+        .cat-btn-no { background: #ff3b30; color: white; }
+        .cat-btn-yes:active { transform: scale(0.95); }
+        .cat-btn-no:active { transform: scale(0.95); }
+        .cat-penalty-txt {
+            color: #ff3b30; font-weight: 900; font-size: 22px;
+            margin-top: 14px;
+            animation: cat-shake 0.5s;
+        }
+        .cat-safe-txt {
+            color: #34c759; font-weight: 900; font-size: 18px;
+            margin-top: 14px;
+        }
+
+        /* Reset Modal */
+        .reset-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 5000;
+            display: none; align-items: center; justify-content: center;
+        }
+        .reset-overlay.show { display: flex; }
+        .reset-modal {
+            background: white; border-radius: 20px; padding: 24px;
+            width: 280px; text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .reset-modal h3 { margin: 0 0 8px; font-weight: 900; font-size: 18px; }
+        .reset-modal p { margin: 0 0 18px; font-size: 13px; color: #8e8e93; }
+        .reset-btns { display: flex; gap: 10px; }
+        .reset-btns button { flex: 1; padding: 13px; border: none; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; }
+        .reset-btn-cancel { background: #f2f2f7; color: #333; }
+        .reset-btn-confirm { background: #ff3b30; color: white; }
+    </style>
+</head>
+<body>
+
+    <div id="login">
+        <div style="font-size: 80px; margin-bottom: 20px;">🐕</div>
+        <h2 style="font-weight: 900;">My Quest</h2>
+        <input type="password" id="pass" class="ios-input" placeholder="World's Best Border Collie">
+        <button class="btn-ios" style="width: 250px; padding: 15px;" onclick="enterApp()">Unlock Adventure</button>
+    </div>
+
+    <div class="header">
+        <div class="rank-pill" id="rank-name" onclick="showRanks()">KOALA</div>
+        <div style="display:flex; align-items:center; gap:12px;">
+            <div class="coin-display" id="coin-txt">💰 0000</div>
+            <div style="font-size:22px; cursor:pointer; position:relative;" onclick="showVouchers()">🎟️<span id="voucher-badge" style="position:absolute;top:-6px;right:-10px;background:var(--ios-pink);color:white;font-size:10px;font-weight:800;min-width:16px;height:16px;line-height:16px;border-radius:10px;text-align:center;padding:0 4px;display:none;"></span></div>
+            <div id="header-avatar" style="width:30px;height:30px;border-radius:50%;background:var(--ios-pink);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(255,45,85,0.3);" onclick="showProfile()">🐕</div>
+            <div style="font-size:18px; cursor:pointer; opacity:0.5;" onclick="showReset()">⚙️</div>
+        </div>
+    </div>
+
+    <div class="viewport" id="viewport"></div>
+
+    <div class="content">
+        <div class="tabs">
+            <div class="tab active" id="tab-q" onclick="setTab('q')">Quests</div>
+            <div class="tab" id="tab-s" onclick="setTab('s')">Shop</div>
+        </div>
+        <div class="list-container" id="main-list"></div>
+    </div>
+
+    <div class="loc-overlay" id="loc-overlay" onclick="if(event.target===this)closeLoc()">
+        <div class="loc-modal">
+            <div class="loc-header">
+                <span class="loc-h-icon" id="loc-h-icon"></span>
+                <div class="loc-h-info">
+                    <h3 id="loc-h-name"></h3>
+                    <div class="loc-h-status" id="loc-h-status"></div>
+                </div>
+            </div>
+            <div class="loc-activities" id="loc-activities"></div>
+            <button class="loc-close" onclick="closeLoc()">Close</button>
+        </div>
+    </div>
+
+    <div class="profile-overlay" id="profile-overlay" onclick="if(event.target===this)closeProfile()">
+        <div class="profile-modal">
+            <div class="profile-avatar" id="pf-avatar-display">🐕</div>
+            <div class="profile-name" id="pf-name-display">Adventurer</div>
+            <div class="profile-bio" id="pf-bio-display">On a quest for greatness!</div>
+            <div class="profile-stats">
+                <div class="pstat"><div class="pstat-val" id="pf-coins">0</div><div class="pstat-lbl">COINS</div></div>
+                <div class="pstat"><div class="pstat-val" id="pf-total">0</div><div class="pstat-lbl">TOTAL XP</div></div>
+                <div class="pstat"><div class="pstat-val" id="pf-vouchers">0</div><div class="pstat-lbl">VOUCHERS</div></div>
+            </div>
+            <div id="pf-extra-stats"></div>
+            <div style="text-align:left;font-weight:800;font-size:13px;margin-bottom:8px;">Choose Avatar</div>
+            <div class="avatar-picker" id="avatar-picker"></div>
+            <div class="profile-section">
+                <label>Display Name</label>
+                <input type="text" id="pf-name-input" maxlength="20" placeholder="Your name">
+            </div>
+            <div class="profile-section">
+                <label>Bio</label>
+                <textarea id="pf-bio-input" maxlength="80" placeholder="Tell us about yourself..."></textarea>
+            </div>
+            <button class="profile-save" onclick="saveProfile()">Save Profile</button>
+            <button class="profile-close" onclick="closeProfile()">Close</button>
+        </div>
+    </div>
+
+    <div class="addq-overlay" id="addq-overlay" onclick="if(event.target===this)closeAddQuest()">
+        <div class="addq-modal">
+            <h3>✨ New Quest</h3>
+            <input type="text" id="addq-name" placeholder="Quest name" maxlength="40">
+            <input type="text" id="addq-desc" placeholder="Description (optional)" maxlength="60">
+            <input type="number" id="addq-pts" placeholder="Points" min="5" max="500">
+            <div class="addq-btns">
+                <button class="addq-cancel" onclick="closeAddQuest()">Cancel</button>
+                <button class="addq-save" onclick="saveNewQuest()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="addq-overlay" id="addr-overlay" onclick="if(event.target===this)closeAddReward()">
+        <div class="addq-modal">
+            <h3>🎁 New Reward</h3>
+            <input type="text" id="addr-name" placeholder="Reward name" maxlength="40">
+            <input type="text" id="addr-desc" placeholder="Description (optional)" maxlength="60">
+            <input type="number" id="addr-price" placeholder="Price (coins)" min="10" max="50000">
+            <div class="addq-btns">
+                <button class="addq-cancel" onclick="closeAddReward()">Cancel</button>
+                <button class="addq-save" onclick="saveNewReward()">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="voucher-overlay" id="voucher-overlay" onclick="if(event.target===this)closeVouchers()">
+        <div class="voucher-modal">
+            <h3>🎟️ My Vouchers</h3>
+            <div class="voucher-list" id="voucher-list"></div>
+            <button class="voucher-close" onclick="closeVouchers()">Close</button>
+        </div>
+    </div>
+
+    <div class="rank-overlay" id="rank-overlay" onclick="if(event.target===this)closeRanks()">
+        <div class="rank-modal">
+            <h3>🏆 All Ranks</h3>
+            <div id="rank-list"></div>
+            <button class="rank-close" onclick="closeRanks()">Close</button>
+        </div>
+    </div>
+
+    <div class="reset-overlay" id="reset-overlay" onclick="if(event.target===this)closeReset()">
+        <div class="reset-modal">
+            <h3>⚠️ Reset Everything?</h3>
+            <p>This will erase all coins, ranks, vouchers, custom quests & rewards. No going back!</p>
+            <div class="reset-btns">
+                <button class="reset-btn-cancel" onclick="closeReset()">Cancel</button>
+                <button class="reset-btn-confirm" onclick="confirmReset()">Reset All</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="cat-overlay" id="cat-overlay">
+        <div class="cat-modal" id="cat-modal">
+            <span class="cat-emoji">🐈‍⬛</span>
+            <div class="cat-bubble">
+                <div class="cat-q" id="cat-question"></div>
+                <div class="cat-btns" id="cat-btns">
+                    <button class="cat-btn-yes" onclick="catAnswer(true)">Yes ✅</button>
+                    <button class="cat-btn-no" onclick="catAnswer(false)">No 🙈</button>
+                </div>
+                <div id="cat-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let coins = parseInt(localStorage.getItem('b_coins')) || 0;
+        let total = parseInt(localStorage.getItem('b_total')) || 0;
+        let vouchers = JSON.parse(localStorage.getItem('b_vouchers')) || [];
+        let customQuests = JSON.parse(localStorage.getItem('b_custom_quests')) || [];
+        let customRewards = JSON.parse(localStorage.getItem('b_custom_rewards')) || [];
+        let tab = 'q';
+        let catTimer = null;
+
+        const catQuestions = [
+            { q: "Were you punctual at school today?", penalty: 40 },
+            { q: "How clean is your kitchen right now? Be honest!", penalty: 35 },
+            { q: "How clean is your bathroom? Spotless?", penalty: 35 },
+            { q: "How clean is your bedroom? Really?", penalty: 30 },
+            { q: "How clean is the living room?", penalty: 30 },
+            { q: "Did you do something for the master thesis today?", penalty: 30 },
+            { q: "Did you give the doggo his pill?", penalty: 45 },
+            { q: "Did you eat a proper meal today?", penalty: 25 },
+            { q: "Did you drink enough water today?", penalty: 20 },
+            { q: "Did you go outside for fresh air?", penalty: 20 },
+            { q: "Were you on time meeting your friends?", penalty: 35 },
+            { q: "Did you stretch or exercise today?", penalty: 25 },
+            { q: "Did you remember to call your family?", penalty: 30 },
+            { q: "Were you on time at doggo school?", penalty: 40 },
+            { q: "Did you tidy up after cooking?", penalty: 30 },
+            { q: "Did you avoid doom-scrolling today?", penalty: 20 },
+            { q: "Did you go to bed on time last night?", penalty: 35 },
+            { q: "Did you prepare Louis's food on time?", penalty: 30 }
+        ];
+
+        const quests = [
+            { t: "Thesis Progress 📝", d: "One more page closer to the finish!", r: 50 },
+            { t: "The Great Flat Clean 🧹", d: "Make my castle shine.", r: 100 },
+            { t: "Louis Walking Duty 🐾", d: "Good boy needs his steps.", r: 40 },
+            { t: "Baking a Treat 🧁", d: "Sweet rewards for sweet efforts.", r: 60 },
+            { t: "Morning Routine ☀️", d: "Up, fresh & ready on time!", r: 35 },
+            { t: "Punctual at School 🎓", d: "On time, every time.", r: 45 },
+            { t: "Punctual at Doggo School 🐶", d: "Louis appreciates punctuality.", r: 45 },
+            { t: "Punctual with Friends 👯", d: "Never keep them waiting!", r: 40 }
+        ];
+
+        const shop = [
+            { t: "Infinite Cuddles 🐨", d: "Best used with a blanket.", p: 100 },
+            { t: "Pancake Breakfast 🥞", d: "A chef's kiss morning.", p: 250 },
+            { t: "Origami Earrings 🛍️", d: "The ones you've been eyeing.", p: 800 },
+            { t: "Full Spa Evening 🧸", d: "The ultimate relaxation.", p: 1200 },
+            { t: "Ballet Date 🩰", d: "Grace and magic night.", p: 2000 }
+        ];
+
+        // ============ THREE.JS 3D SCENE ============
+        let scene3d, cam3d, ren3d, dogGrp, pathCurve, clock3d;
+        let locLabels3d = [], targetDogT = 0, currentDogT = 0, sceneReady = false;
+        const locData = [
+            { icon: '\uD83C\uDFE0', name: 'Home Base', t: 0 },
+            { icon: '\uD83C\uDF6B', name: 'Choco Hill', t: 1/7 },
+            { icon: '\uD83D\uDC3E', name: 'Puppy Park', t: 2/7 },
+            { icon: '\uD83E\uDDCB', name: 'Bubble Tea', t: 3/7 },
+            { icon: '\uD83D\uDECD\uFE0F', name: 'Shopping City', t: 4/7 },
+            { icon: '\uD83C\uDF63', name: 'Sushi Palace', t: 5/7 },
+            { icon: '\uD83E\uDDDF\u200D\u2640\uFE0F', name: 'Spa Island', t: 6/7 },
+            { icon: '\uD83E\uDE70', name: 'Opera House', t: 1 }
+        ];
+
+        function hillH(x, z) {
+            let h = (x + 12) * 0.28 + (-z + 9) * 0.1;
+            h += Math.sin(x * 0.5) * 0.3 + Math.cos(z * 0.7) * 0.2;
+            return Math.max(h, -0.3);
+        }
+
+        function init3D() {
+            const vp = document.getElementById('viewport');
+            const W = vp.clientWidth, H = vp.clientHeight;
+            scene3d = new THREE.Scene();
+            scene3d.background = null; // transparent
+            // Remove fog for clarity
+            // scene3d.fog = new THREE.FogExp2(0xaed8f0, 0.015);
+            cam3d = new THREE.PerspectiveCamera(48, W / H, 0.1, 200);
+            // Lower camera and zoom in on the map
+            cam3d.position.set(1, 7.5, 5);
+            cam3d.lookAt(1, 0, 2);
+            ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            ren3d.setClearColor(0x000000, 0); // transparent
+            ren3d.setSize(W, H);
+            ren3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            ren3d.shadowMap.enabled = true;
+            ren3d.shadowMap.type = THREE.PCFSoftShadowMap;
+            ren3d.toneMapping = THREE.ACESFilmicToneMapping;
+            ren3d.toneMappingExposure = 1.2;
+            vp.appendChild(ren3d.domElement);
+            scene3d.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const sun = new THREE.DirectionalLight(0xffeedd, 1.0);
+            sun.position.set(8, 15, 5); sun.castShadow = true;
+            sun.shadow.mapSize.set(1024, 1024);
+            sun.shadow.camera.left = -15; sun.shadow.camera.right = 15;
+            sun.shadow.camera.top = 15; sun.shadow.camera.bottom = -15;
+            scene3d.add(sun);
+            const fill = new THREE.DirectionalLight(0x8899ff, 0.3);
+            fill.position.set(-5, 3, -5); scene3d.add(fill);
+            mkHill(true); mkPath(true); mkDog(); mkLocs(); mkTrees(); /* no clouds */
+            clock3d = new THREE.Clock(); sceneReady = true;
+            window.addEventListener('resize', () => {
+                const w = vp.clientWidth, h = vp.clientHeight;
+                cam3d.aspect = w / h; cam3d.updateProjectionMatrix(); ren3d.setSize(w, h);
+            });
+            animLoop();
+        }
+
+        function mkHill() {
+            // If scaleUp is true, scale the map up to fill the viewport
+            let scaleUp = arguments[0] === true;
+            const geo = new THREE.PlaneGeometry(scaleUp ? 38 : 26, scaleUp ? 29 : 20, 64, 48);
+            geo.rotateX(-Math.PI / 2);
+            const pos = geo.attributes.position;
+            for (let v = 0; v < pos.count; v++) pos.setY(v, hillH(pos.getX(v), pos.getZ(v)) * (scaleUp ? 1.45 : 1));
+            geo.computeVertexNormals();
+            const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x5cb338 }));
+            mesh.receiveShadow = true; scene3d.add(mesh);
+            const wGeo = new THREE.PlaneGeometry(scaleUp ? 120 : 80, scaleUp ? 120 : 80); wGeo.rotateX(-Math.PI / 2);
+            const water = new THREE.Mesh(wGeo, new THREE.MeshLambertMaterial({ color: 0x4a90d9, transparent: true, opacity: 0.6 }));
+            water.position.y = -0.5; scene3d.add(water);
+        }
+
+        function mkPath() {
+            // If scaleUp is true, scale the path up to match the hill
+            let scaleUp = arguments[0] === true;
+            const scale = scaleUp ? 1.45 : 1;
+            const pts = [[-8,5],[-6,3.5],[-4,4],[-2,2.5],[0,3],[2,1.5],[4,2.5],[6,1],[8,0],[9.5,-1]]
+                .map(([x,z]) => new THREE.Vector3(x * (scaleUp ? 1.46 : 1), hillH(x * (scaleUp ? 1.46 : 1),z * scale) * scale + 0.15, z * scale));
+            pathCurve = new THREE.CatmullRomCurve3(pts);
+            const tube = new THREE.Mesh(
+                new THREE.TubeGeometry(pathCurve, 100, 0.15 * scale, 8, false),
+                new THREE.MeshLambertMaterial({ color: 0xc4a070 })
+            );
+            tube.receiveShadow = true; scene3d.add(tube);
+        }
+
+        function mkDog() {
+            dogGrp = new THREE.Group();
+            const blk = new THREE.MeshLambertMaterial({ color: 0x1a1a1a });
+            const wht = new THREE.MeshLambertMaterial({ color: 0xffffff });
+            const nos = new THREE.MeshLambertMaterial({ color: 0x333333 });
+            const body = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.5, 0.5), blk);
+            body.position.set(0, 0.5, 0); body.castShadow = true; dogGrp.add(body);
+            const chest = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.4, 0.52), wht);
+            chest.position.set(0.35, 0.5, 0); dogGrp.add(chest);
+            const head = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.38, 0.42), blk);
+            head.position.set(0.6, 0.85, 0); head.castShadow = true; dogGrp.add(head);
+            const snout = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.18, 0.28), wht);
+            snout.position.set(0.8, 0.78, 0); dogGrp.add(snout);
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 8), nos);
+            nose.position.set(0.92, 0.82, 0); dogGrp.add(nose);
+            [0.14, -0.14].forEach(z => {
+                const eye = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), nos);
+                eye.position.set(0.78, 0.95, z); dogGrp.add(eye);
+            });
+            [-1, 1].forEach(s => {
+                const ear = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 0.1), blk);
+                ear.position.set(0.52, 1.08, s * 0.17); ear.rotation.z = 0.3; dogGrp.add(ear);
+            });
+            dogGrp.legs = [];
+            [[-1, wht, 0.3, 0.18], [1, wht, 0.3, -0.18],
+             [1, blk, -0.3, 0.18], [-1, blk, -0.3, -0.18]].forEach(([pair, mat, x, z]) => {
+                const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.35, 0.1), mat);
+                leg.position.set(x, 0.18, z); leg.castShadow = true;
+                dogGrp.add(leg); dogGrp.legs.push({ mesh: leg, pair: pair });
+            });
+            dogGrp.tail = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.35, 6), blk);
+            dogGrp.tail.position.set(-0.55, 0.8, 0);
+            dogGrp.tail.geometry.translate(0, 0.15, 0);
+            dogGrp.add(dogGrp.tail);
+            const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), wht);
+            tip.position.set(0, 0.22, 0); dogGrp.tail.add(tip);
+            dogGrp.scale.set(0.7, 0.7, 0.7);
+            scene3d.add(dogGrp);
+            dogGrp.position.copy(pathCurve.getPoint(0));
+        }
+
+        function mkLocs() {
+            const vp = document.getElementById('viewport');
+            locData.forEach(loc => {
+                const p = pathCurve.getPoint(loc.t);
+                const disc = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.32, 0.32, 0.06, 12),
+                    new THREE.MeshLambertMaterial({ color: 0xffe0b2 })
+                );
+                disc.position.set(p.x, p.y + 0.04, p.z); disc.receiveShadow = true; scene3d.add(disc);
+                const pole = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.025, 0.025, 1.0, 6),
+                    new THREE.MeshLambertMaterial({ color: 0x7B5B3A })
+                );
+                pole.position.set(p.x, p.y + 0.55, p.z); scene3d.add(pole);
+                const lbl = document.createElement('div');
+                lbl.className = 'loc-label-3d';
+                lbl.innerHTML = '<span class="loc-icon-3d">' + loc.icon + '</span><span class="loc-tag-3d">' + loc.name + '</span>';
+                lbl.addEventListener('click', () => showLocDetail(loc));
+                vp.appendChild(lbl);
+                locLabels3d.push({ el: lbl, world: new THREE.Vector3(p.x, p.y + 1.3, p.z), loc: loc });
+            });
+        }
+
+        function mkTrees() {
+            const tg = new THREE.MeshLambertMaterial({ color: 0x2d8a2d });
+            const tk = new THREE.MeshLambertMaterial({ color: 0x7B5B3A });
+            [[-9,7],[-7,6],[-3,6],[1,5.5],[5,4],[8,2.5],[-5,-1],[3,-1],[7,-2],[-10,2],[10,-3],[-6,0.5],[1,-0.5],[5,-0.5]]
+            .forEach(([x,z]) => {
+                const y = hillH(x,z);
+                const th = 0.4 + Math.random() * 0.3;
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, th, 5), tk);
+                trunk.position.set(x, y + th/2, z); trunk.castShadow = true; scene3d.add(trunk);
+                const layers = 2 + Math.floor(Math.random() * 2);
+                for (let l = 0; l < layers; l++) {
+                    const r = 0.45 - l * 0.1 + Math.random() * 0.08;
+                    const h = 0.55 + Math.random() * 0.15;
+                    const c = new THREE.Mesh(new THREE.ConeGeometry(r, h, 6), tg);
+                    c.position.set(x, y + th + l * 0.3 + 0.15, z); c.castShadow = true; scene3d.add(c);
+                }
+            });
+            const fc = [0xff69b4, 0xff2d55, 0xffeb3b, 0xff9800, 0xba68c8];
+            for (let i = 0; i < 30; i++) {
+                const t = Math.random(), pt = pathCurve.getPoint(t);
+                const ox = (Math.random()-0.5)*2.5, oz = (Math.random()-0.5)*1.5;
+                const fx = pt.x+ox, fz = pt.z+oz, fy = hillH(fx,fz);
+                const fl = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.05+Math.random()*0.03, 6, 6),
+                    new THREE.MeshLambertMaterial({ color: fc[Math.floor(Math.random()*fc.length)] })
+                );
+                fl.position.set(fx, fy+0.05, fz); scene3d.add(fl);
+            }
+        }
+
+        function mkClouds() {
+            const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
+            [[-8,12,-5],[0,14,-8],[8,11,-3],[-4,13,-10],[5,15,-7]].forEach(([x,y,z]) => {
+                const cg = new THREE.Group();
+                for (let i = 0; i < 4+Math.floor(Math.random()*3); i++) {
+                    const r = 0.4+Math.random()*0.7;
+                    const pf = new THREE.Mesh(new THREE.SphereGeometry(r, 7, 5), cm);
+                    pf.position.set(Math.random()*2-1, Math.random()*0.2, Math.random()*1.2-0.6);
+                    cg.add(pf);
+                }
+                cg.position.set(x, y, z); scene3d.add(cg);
+            });
+        }
+
+        function updateDog3D(t) { if (sceneReady) targetDogT = Math.min(Math.max(t, 0), 1); }
+
+        function animLoop() {
+            requestAnimationFrame(animLoop);
+            if (!sceneReady) return;
+            const dt = clock3d.getDelta(), el = clock3d.getElapsedTime();
+            currentDogT += (targetDogT - currentDogT) * Math.min(dt * 2, 1);
+            if (pathCurve && dogGrp) {
+                const pos = pathCurve.getPoint(currentDogT);
+                dogGrp.position.copy(pos);
+                const lt = Math.min(currentDogT + 0.01, 1);
+                const lp = pathCurve.getPoint(lt);
+                const dir = new THREE.Vector3().subVectors(lp, pos);
+                if (dir.lengthSq() > 0.0001) dogGrp.rotation.y = Math.atan2(dir.x, dir.z) - Math.PI/2;
+                const moving = Math.abs(targetDogT - currentDogT) > 0.001;
+                const sw = Math.sin(el * (moving ? 8 : 0)) * 0.4;
+                dogGrp.legs.forEach(l => { l.mesh.rotation.x = sw * l.pair; });
+                if (dogGrp.tail) dogGrp.tail.rotation.z = Math.sin(el * 5) * 0.4;
+                dogGrp.position.y += Math.sin(el * (moving ? 8 : 2)) * (moving ? 0.04 : 0.015);
+            }
+            const vp = document.getElementById('viewport');
+            const W = vp.clientWidth, H = vp.clientHeight;
+            locLabels3d.forEach(({ el: lbl, world }) => {
+                const v = world.clone().project(cam3d);
+                if (v.z < 1) {
+                    lbl.style.display = 'block';
+                    lbl.style.left = ((v.x*0.5+0.5)*W) + 'px';
+                    lbl.style.top = ((-v.y*0.5+0.5)*H) + 'px';
+                } else { lbl.style.display = 'none'; }
+            });
+            cam3d.position.x = 1 + Math.sin(el * 0.1) * 0.08;
+            cam3d.position.y = 7.5 + Math.sin(el * 0.15) * 0.04;
+            cam3d.lookAt(1, 0, 2);
+            ren3d.render(scene3d, cam3d);
+        }
+
+        function getRankIdx() {
+            let idx = rankData.length - 1;
+            for (let r = rankData.length - 1; r >= 0; r--) {
+                if (total >= rankData[r].threshold) { idx = r; break; }
+            }
+            return idx;
+        }
+
+        // === LOCATION FEATURES ===
+        const locFeatures = {
+            'Home Base': {
+                desc: 'Where every adventure begins. Rest up and prepare!',
+                unlockCoins: 0,
+                activities: [
+                    { name: 'Rest & Recover', desc: 'Take a break, recharge your energy.', reward: 10, type: 'quest' },
+                    { name: 'Plan Your Day', desc: 'Set daily goals for bonus motivation.', reward: 15, type: 'quest' }
+                ]
+            },
+            'Choco Hill': {
+                desc: 'A sweet hilltop covered in cocoa dreams.',
+                unlockCoins: 500,
+                activities: [
+                    { name: 'Chocolate Tasting', desc: 'Sample rare flavors from around the world.', reward: 25, type: 'quest' },
+                    { name: 'Bake Brownies', desc: 'Whip up a batch of fudgy goodness.', reward: 40, type: 'quest' }
+                ]
+            },
+            'Puppy Park': {
+                desc: 'The happiest place on earth for good boys.',
+                unlockCoins: 1500,
+                activities: [
+                    { name: 'Fetch Champion', desc: 'Play 20 rounds of fetch with Louis.', reward: 35, type: 'quest' },
+                    { name: 'Dog Training', desc: 'Teach a new trick.', reward: 50, type: 'quest' }
+                ]
+            },
+            'Bubble Tea': {
+                desc: 'Refreshing drinks and chill vibes.',
+                unlockCoins: 3000,
+                activities: [
+                    { name: 'Try a New Flavor', desc: 'Something adventurous today?', reward: 20, type: 'quest' },
+                    { name: 'Boba Date', desc: 'Share a drink with a friend.', reward: 30, type: 'quest' }
+                ]
+            },
+            'Shopping City': {
+                desc: 'Retail therapy at its finest.',
+                unlockCoins: 5000,
+                activities: [
+                    { name: 'Window Shopping', desc: 'Explore without spending (just coins!).', reward: 20, type: 'quest' },
+                    { name: 'Find a Bargain', desc: 'Hunt for the best deal.', reward: 45, type: 'quest' }
+                ]
+            },
+            'Sushi Palace': {
+                desc: 'Fresh rolls and master chef vibes.',
+                unlockCoins: 7000,
+                activities: [
+                    { name: 'Make Sushi', desc: 'Roll your own maki masterpiece.', reward: 55, type: 'quest' },
+                    { name: 'Omakase Challenge', desc: 'Eat whatever the chef prepares!', reward: 40, type: 'quest' }
+                ]
+            },
+            'Spa Island': {
+                desc: 'Ultimate relaxation for mind & body.',
+                unlockCoins: 10000,
+                activities: [
+                    { name: 'Face Mask Session', desc: 'Pamper yourself like royalty.', reward: 35, type: 'quest' },
+                    { name: 'Meditation Hour', desc: '60 minutes of pure zen.', reward: 60, type: 'quest' }
+                ]
+            },
+            'Opera House': {
+                desc: 'Where elegance meets adventure. The summit!',
+                unlockCoins: 14000,
+                activities: [
+                    { name: 'Attend a Show', desc: 'Dress up and enjoy the performance.', reward: 70, type: 'quest' },
+                    { name: 'Dance on Stage', desc: 'Your moment in the spotlight!', reward: 100, type: 'quest' }
+                ]
+            }
+        };
+
+        function showLocDetail(loc) {
+            const feat = locFeatures[loc.name];
+            if (!feat) return;
+            const unlocked = coins >= feat.unlockCoins || total >= feat.unlockCoins;
+            document.getElementById('loc-h-icon').innerText = loc.icon;
+            document.getElementById('loc-h-name').innerText = loc.name;
+            const status = document.getElementById('loc-h-status');
+            if (unlocked) {
+                status.className = 'loc-h-status unlocked';
+                status.innerText = '\u2705 Unlocked \u2014 ' + feat.desc;
+            } else {
+                status.className = 'loc-h-status locked';
+                status.innerText = '\uD83D\uDD12 Requires ' + feat.unlockCoins + ' coins \u2014 ' + feat.desc;
+            }
+            const acts = document.getElementById('loc-activities');
+            acts.innerHTML = feat.activities.map((a, i) => `
+                <div class="loc-act-card">
+                    <div>
+                        <div class="la-info">${a.name}</div>
+                        <div class="la-desc">${a.desc}</div>
+                        <div class="la-reward">+${a.reward} Coins</div>
+                    </div>
+                    <button class="loc-act-btn" ${!unlocked ? 'disabled' : ''} onclick="doLocActivity(${a.reward})">DO IT</button>
+                </div>
+            `).join('');
+            document.getElementById('loc-overlay').classList.add('show');
+        }
+
+        function doLocActivity(reward) {
+            coins += reward; total += reward;
+            confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
+            save(); render(); closeLoc();
+        }
+
+        function closeLoc() {
+            document.getElementById('loc-overlay').classList.remove('show');
+        }
+
+        // === PROFILE SYSTEM ===
+        const avatarChoices = ['\uD83D\uDC15','\uD83D\uDC31','\uD83E\uDD84','\uD83E\uDDA9','\uD83D\uDC27','\uD83D\uDC3C','\uD83E\uDDDA\u200D\u2640\uFE0F','\uD83E\uDE70','\uD83C\uDF1F','\uD83C\uDF38'];
+        let profile = JSON.parse(localStorage.getItem('b_profile')) || { name: 'Adventurer', bio: 'On a quest for greatness!', avatar: '\uD83D\uDC15' };
+
+        function showProfile() {
+            document.getElementById('pf-avatar-display').innerText = profile.avatar;
+            document.getElementById('pf-name-display').innerText = profile.name;
+            document.getElementById('pf-bio-display').innerText = profile.bio;
+            document.getElementById('pf-coins').innerText = coins;
+            document.getElementById('pf-total').innerText = total;
+            document.getElementById('pf-vouchers').innerText = vouchers.filter(v => !v.redeemed).length;
+            // Rank progress
+            const rIdx = getRankIdx();
+            const nextRank = rIdx < rankData.length - 1 ? rankData[rIdx + 1] : null;
+            const progress = nextRank ? Math.min(100, Math.round((total - rankData[rIdx].threshold) / (nextRank.threshold - rankData[rIdx].threshold) * 100)) : 100;
+            const locsUnlocked = Object.values(locFeatures).filter(f => coins >= f.unlockCoins || total >= f.unlockCoins).length;
+            document.getElementById('pf-extra-stats').innerHTML = `
+                <div class="card" style="text-align:left; margin-top:12px;">
+                    <div style="width:100%;">
+                        <div style="font-weight:800;">${rankData[rIdx].icon} ${rankData[rIdx].name}</div>
+                        <div style="font-size:11px; color:#8e8e93;">${nextRank ? 'Next: ' + nextRank.name + ' (' + nextRank.threshold + ' pts)' : 'MAX RANK! \uD83C\uDF89'}</div>
+                        <div style="background:#e5e5ea; border-radius:6px; height:8px; margin-top:8px; overflow:hidden;">
+                            <div style="background:var(--ios-pink); height:100%; width:${progress}%; border-radius:6px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; margin-top:8px; font-size:12px; text-align:left;">
+                    <div style="flex:1; background:#f2f2f7; border-radius:12px; padding:10px;">\uD83D\uDDFA\uFE0F <b>${locsUnlocked}/${Object.keys(locFeatures).length}</b> locations</div>
+                    <div style="flex:1; background:#f2f2f7; border-radius:12px; padding:10px;">\uD83D\uDCCB <b>${customQuests.length + customRewards.length}</b> custom items</div>
+                </div>
+            `;
+            document.getElementById('pf-name-input').value = profile.name;
+            document.getElementById('pf-bio-input').value = profile.bio;
+            const picker = document.getElementById('avatar-picker');
+            picker.innerHTML = avatarChoices.map(a =>
+                '<div class="avatar-opt ' + (a === profile.avatar ? 'selected' : '') + '" onclick="pickAvatar(\'' + a + '\')">' + a + '</div>'
+            ).join('');
+            document.getElementById('profile-overlay').classList.add('show');
+        }
+
+        function pickAvatar(a) {
+            profile.avatar = a;
+            document.querySelectorAll('.avatar-opt').forEach(el => el.classList.remove('selected'));
+            event.target.closest('.avatar-opt').classList.add('selected');
+            document.getElementById('pf-avatar-display').innerText = a;
+        }
+
+        function saveProfile() {
+            const n = document.getElementById('pf-name-input').value.trim();
+            const b = document.getElementById('pf-bio-input').value.trim();
+            if (n) profile.name = n;
+            profile.bio = b || '';
+            localStorage.setItem('b_profile', JSON.stringify(profile));
+            document.getElementById('pf-name-display').innerText = profile.name;
+            document.getElementById('pf-bio-display').innerText = profile.bio;
+            document.getElementById('pf-avatar-display').innerText = profile.avatar;
+            document.getElementById('header-avatar').innerText = profile.avatar;
+        }
+
+        function closeProfile() {
+            document.getElementById('profile-overlay').classList.remove('show');
+        }
+
+        function enterApp() {
+            if(document.getElementById('pass').value.toLowerCase() === 'louis') {
+                document.getElementById('login').style.display = 'none';
+                init3D();
+                document.getElementById('header-avatar').innerText = profile.avatar;
+                render();
+                scheduleCat(true);
+            }
+        }
+
+        function render() {
+            document.getElementById('coin-txt').innerText = "💰 " + coins.toString().padStart(4, '0');
+            
+            // Rank Logic
+            let idx = getRankIdx();
+            document.getElementById('rank-name').innerText = rankData[idx].name;
+
+            // Update 3D dog position along path
+            updateDog3D(Math.min(coins / 15000, 1));
+
+            // Voucher badge
+            const openCount = vouchers.filter(v => !v.redeemed).length;
+            const badge = document.getElementById('voucher-badge');
+            if (openCount > 0) { badge.style.display = 'block'; badge.innerText = openCount; }
+            else { badge.style.display = 'none'; }
+
+            // List Render
+            const list = document.getElementById('main-list');
+            const allQuests = quests.concat(customQuests);
+            const allShop = shop.concat(customRewards);
+            const items = (tab === 'q') ? allQuests : allShop;
+            list.innerHTML = items.map((i, idx) => `
+                <div class="card" style="${tab==='s' && coins < i.p ? 'opacity:0.6' : ''}">
+                    <div>
+                        <div style="font-weight:800;">${i.t}</div>
+                        <div style="font-size:12px; color:#8e8e93;">${i.d || ''}</div>
+                        <div style="color:${tab==='q' ? '#ff9500' : 'var(--ios-pink)'}; font-weight:800; margin-top:5px;">
+                            ${tab==='q' ? '+'+i.r+' Coins' : 'Price: '+i.p}
+                        </div>
+                    </div>
+                    <button class="btn-ios" ${tab==='s' && coins < i.p ? 'disabled' : ''} onclick="${tab==='q' ? 'doQuest('+i.r+')' : 'doBuy(\''+i.t.replace(/'/g,"\\\\'")+'\','+i.p+')'}">
+                        ${tab==='q' ? 'DONE' : 'BUY'}
+                    </button>
+                </div>
+            `).join('');
+            list.innerHTML += '<button class="add-quest-btn" onclick="' + (tab==='q' ? 'showAddQuest()' : 'showAddReward()') + '">+ Add ' + (tab==='q' ? 'Quest' : 'Reward') + '</button>';
+
+            // Update location label lock/unlock styling
+            locLabels3d.forEach(({ el: lbl, loc }) => {
+                if (!loc) return;
+                const feat = locFeatures[loc.name];
+                const tag = lbl.querySelector('.loc-tag-3d');
+                if (feat && tag) {
+                    const unl = coins >= feat.unlockCoins || total >= feat.unlockCoins;
+                    tag.classList.toggle('unlocked', unl);
+                    tag.classList.toggle('locked', !unl);
+                }
+            });
+        }
+
+        function setTab(t) {
+            tab = t;
+            document.getElementById('tab-q').className = t==='q' ? 'tab active' : 'tab';
+            document.getElementById('tab-s').className = t==='s' ? 'tab active' : 'tab';
+            render();
+        }
+
+        function doQuest(amt) {
+            coins += amt; total += amt;
+            confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+            save(); render();
+        }
+
+        function doBuy(t, p) {
+            coins -= p;
+            vouchers.push({ title: t, date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) });
+            confetti({ particleCount: 150, spread: 80, colors: ['#ff2d55'] });
+            save(); render();
+            setTimeout(() => showVouchers(), 600);
+        }
+
+        function showVouchers() {
+            const el = document.getElementById('voucher-list');
+            if (vouchers.length === 0) {
+                el.innerHTML = '<div class="voucher-empty">No vouchers yet!<br>Buy rewards to collect them here 🎀</div>';
+            } else {
+                el.innerHTML = vouchers.map((v, i) => `
+                    <div class="voucher-card ${v.redeemed ? 'redeemed' : ''}">
+                        <span class="v-stamp">${v.redeemed ? '\u2705' : '\ud83c\udf9f\ufe0f'}</span>
+                        <div class="v-title">${v.title}</div>
+                        <div class="v-date">${v.redeemed ? 'Used ' + v.redeemedDate : 'Claimed ' + v.date}</div>
+                        ${v.redeemed
+                            ? '<span class="v-status used">REDEEMED</span>'
+                            : '<span class="v-status open" onclick="redeemVoucher(' + i + ')">\u2728 REDEEM</span>'
+                        }
+                    </div>
+                `).join('');
+            }
+            document.getElementById('voucher-overlay').classList.add('show');
+        }
+
+        function redeemVoucher(idx) {
+            vouchers[idx].redeemed = true;
+            vouchers[idx].redeemedDate = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            save();
+            showVouchers();
+        }
+
+        function closeVouchers() {
+            document.getElementById('voucher-overlay').classList.remove('show');
+        }
+
+        const rankData = [
+            { name: "BABY DUCKLING", icon: "🐥", threshold: 0 },
+            { name: "BRONZE KOALA", icon: "🐨", threshold: 500 },
+            { name: "SILVER PENGUIN", icon: "🐧", threshold: 1200 },
+            { name: "GOLDEN BEAVER", icon: "🦫", threshold: 2000 },
+            { name: "SAPPHIRE DOLPHIN", icon: "🐬", threshold: 3500 },
+            { name: "RUBY FLAMINGO", icon: "🦩", threshold: 5000 },
+            { name: "DIAMOND UNICORN", icon: "🦄", threshold: 7500 },
+            { name: "PLATINUM PHOENIX", icon: "🔥", threshold: 10000 },
+            { name: "GRAND BALLERINA", icon: "🩰", threshold: 15000 }
+        ];
+
+        function showRanks() {
+            let idx = getRankIdx();
+            const html = rankData.map((r, i) => `
+                <div class="rank-row ${i === idx ? 'current' : ''}">
+                    <span class="rank-icon">${r.icon}</span>
+                    ${r.name}
+                    <span class="rank-threshold">${r.threshold}+ pts</span>
+                </div>
+            `).join('');
+            document.getElementById('rank-list').innerHTML = html;
+            document.getElementById('rank-overlay').classList.add('show');
+        }
+
+        function closeRanks() {
+            document.getElementById('rank-overlay').classList.remove('show');
+        }
+
+        function save() {
+            localStorage.setItem('b_coins', coins);
+            localStorage.setItem('b_total', total);
+            localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
+            localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
+            localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
+        }
+
+        function showAddQuest() {
+            document.getElementById('addq-name').value = '';
+            document.getElementById('addq-desc').value = '';
+            document.getElementById('addq-pts').value = '';
+            document.getElementById('addq-overlay').classList.add('show');
+        }
+
+        function closeAddQuest() {
+            document.getElementById('addq-overlay').classList.remove('show');
+        }
+
+        function saveNewQuest() {
+            const name = document.getElementById('addq-name').value.trim();
+            const desc = document.getElementById('addq-desc').value.trim();
+            const pts = parseInt(document.getElementById('addq-pts').value);
+            if (!name || !pts || pts < 5) return;
+            customQuests.push({ t: name, d: desc, r: pts });
+            save();
+            closeAddQuest();
+            render();
+        }
+
+        function showAddReward() {
+            document.getElementById('addr-name').value = '';
+            document.getElementById('addr-desc').value = '';
+            document.getElementById('addr-price').value = '';
+            document.getElementById('addr-overlay').classList.add('show');
+        }
+
+        function closeAddReward() {
+            document.getElementById('addr-overlay').classList.remove('show');
+        }
+
+        function saveNewReward() {
+            const name = document.getElementById('addr-name').value.trim();
+            const desc = document.getElementById('addr-desc').value.trim();
+            const price = parseInt(document.getElementById('addr-price').value);
+            if (!name || !price || price < 10) return;
+            customRewards.push({ t: name, d: desc, p: price });
+            save();
+            closeAddReward();
+            render();
+        }
+
+        // === BLACK CAT ===
+        let currentCatQ = null;
+
+        function showReset() {
+            document.getElementById('reset-overlay').classList.add('show');
+        }
+        function closeReset() {
+            document.getElementById('reset-overlay').classList.remove('show');
+        }
+        function confirmReset() {
+            coins = 0; total = 0;
+            vouchers = []; customQuests = []; customRewards = [];
+            localStorage.removeItem('b_coins');
+            localStorage.removeItem('b_total');
+            localStorage.removeItem('b_vouchers');
+            localStorage.removeItem('b_custom_quests');
+            localStorage.removeItem('b_custom_rewards');
+            localStorage.removeItem('b_profile');
+            profile = { name: 'Adventurer', bio: 'On a quest for greatness!', avatar: '\uD83D\uDC15' };
+            closeReset();
+            render();
+        }
+
+        function scheduleCat(firstTime) {
+            // First time: 10-20s, after that: 45s to 3 min
+            const delay = firstTime ? (10 + Math.random() * 10) * 1000 : (45 + Math.random() * 135) * 1000;
+            catTimer = setTimeout(() => {
+                summonCat();
+            }, delay);
+        }
+
+        function summonCat() {
+            currentCatQ = catQuestions[Math.floor(Math.random() * catQuestions.length)];
+            document.getElementById('cat-question').innerText = currentCatQ.q;
+            document.getElementById('cat-btns').style.display = 'flex';
+            document.getElementById('cat-result').innerHTML = '';
+            document.getElementById('cat-modal').classList.remove('leaving');
+            document.getElementById('cat-overlay').classList.remove('penalty');
+            document.getElementById('cat-overlay').classList.add('show');
+        }
+
+        function catAnswer(yes) {
+            document.getElementById('cat-btns').style.display = 'none';
+            const result = document.getElementById('cat-result');
+            if (yes) {
+                result.innerHTML = '<div class="cat-safe-txt">Good human! You\'re safe... for now. 😼</div>';
+            } else {
+                const pen = currentCatQ.penalty;
+                coins = Math.max(0, coins - pen);
+                total = Math.max(0, total - Math.floor(pen / 2));
+                save(); render();
+                document.getElementById('cat-overlay').classList.add('penalty');
+                result.innerHTML = '<div class="cat-penalty-txt">☠️ -' + pen + ' Coins!</div>';
+            }
+            setTimeout(() => {
+                document.getElementById('cat-modal').classList.add('leaving');
+                setTimeout(() => {
+                    document.getElementById('cat-overlay').classList.remove('show');
+                    document.getElementById('cat-overlay').classList.remove('penalty');
+                    scheduleCat(false);
+                }, 400);
+            }, 1800);
+        }
+    </script>
+</body>
+</html>
