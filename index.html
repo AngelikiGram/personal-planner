@@ -466,8 +466,13 @@
     <div id="login">
         <div style="font-size: 80px; margin-bottom: 20px;">🐕</div>
         <h2 style="font-weight: 900;">My Quest</h2>
-        <input type="password" id="pass" class="ios-input" placeholder="World's Best Border Collie">
+        <input type="password" id="pass" class="ios-input" placeholder="World's Best Border Collie"> 
+        <!-- "Password or Profile Name"> -->
         <button class="btn-ios" style="width: 250px; padding: 15px;" onclick="enterApp()">Unlock Adventure</button>
+        <p style="margin-top: 20px; color: #8e8e93; font-size: 13px; max-width: 260px; text-align: center; line-height: 1.4;">
+            ✨ <b>Tip:</b> Enter <b style="color:#000">louis</b> for offline mode.<br>
+            Enter a <b style="color:var(--ios-pink)">Unique Name</b> (e.g. AngieWorld) to create a Cloud Save!
+        </p>
     </div>
 
     <div class="header">
@@ -1353,11 +1358,14 @@
                  document.querySelector('.profile-modal').appendChild(cloudStatus);
             }
             if(window.isFirebaseReady && auth && auth.currentUser) {
-                cloudStatus.innerText = '✅ Cloud Connected: ' + auth.currentUser.email;
+                cloudStatus.innerText = '✅ Cloud Connected: ' + (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : "User");
                 cloudStatus.style.color = '#34c759';
                 cloudStatus.style.fontWeight = 'bold';
-            } else if (!window.isFirebaseReady) {
-                cloudStatus.innerHTML = '⚠️ <a href="#" onclick="alert(\'You need to add the Firebase Config in the code to enable Cloud Sync!\')">Cloud Not Configured</a>';
+            } else if (window.isFirebaseReady) {
+                cloudStatus.innerHTML = '☁️ <b>Offline Mode</b><br><span style="font-size:11px; opacity:0.8;">Restart app & enter a unique Profile Name to go online!</span>';
+                cloudStatus.style.color = '#8e8e93';
+            } else {
+                cloudStatus.innerHTML = '⚠️ Cloud Not Configured';
             }
 
             // Rank progress
@@ -1443,15 +1451,22 @@
                             startApp();
                         })
                         .catch(e => {
-                            if(e.code === 'auth/user-not-found') {
+                            if(e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-login-credentials') {
                                 // Create new
                                 if(confirm("New profile detected: '" + val + "'. Create new cloud save?")) {
                                     auth.createUserWithEmailAndPassword(fakeEmail, fakePass)
                                         .then(() => {
-                                            save(); // Save current local data to this new cloud profile
+                                            // Force save immediately to seed the cloud with current local data
+                                            // We need to ensure we set the profile name correctly first
+                                            profile.name = val;
+                                            save(); 
+                                            alert("Cloud Profile Created! Sync active.");
                                             startApp();
-                                        });
+                                        })
+                                        .catch(err => alert("Creation Failed: " + err.message));
                                 }
+                            } else if (e.code === 'auth/operation-not-allowed' || e.code === 'auth/configuration-not-found') {
+                                alert("FIREBASE CONFIG ERROR: Go to Firebase Console > Authentication > Sign-in method, and ENABLE 'Email/Password'.");
                             } else {
                                 alert("Login Error: " + e.message);
                             }
