@@ -948,11 +948,16 @@
                 const z = Math.sin(angle) * r;
                 
                 let safe = true;
+                const distSq = x*x + z*z;
                 // Avoid center top
-                if (x*x + z*z < 2) continue;
+                if (distSq < 2) continue;
                 
-                // Avoid water
-                if (hillH(x, z) < 0.2) continue;
+                // Avoid water / shoreline (keep trees strictly on the main island part)
+                // The tapering starts at r=17 (distSq=289), so let's keep trees within r=16 (256)
+                if (distSq > 256) continue;
+                
+                // Also check height just in case
+                if (hillH(x, z) < 0.5) continue;
 
                 // Path collision
                 for(let p of pathPts) {
