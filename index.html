@@ -466,7 +466,7 @@
     <div id="login">
         <div style="font-size: 80px; margin-bottom: 20px;">🐕</div>
         <h2 style="font-weight: 900;">My Quest</h2>
-        <input type="password" id="pass" class="ios-input" placeholder="World's Best Border Collie"> 
+        <input type="password" id="pass" class="ios-input" placeholder="Enter 'Louis' or Profile Name..." oninput="this.value = this.value.toLowerCase()"> 
         <!-- "Password or Profile Name"> -->
         <button class="btn-ios" style="width: 250px; padding: 15px;" onclick="enterApp()">Unlock Adventure</button>
         <p style="margin-top: 20px; color: #8e8e93; font-size: 13px; max-width: 260px; text-align: center; line-height: 1.4;">
@@ -1490,8 +1490,8 @@
                 isWaitingForSync = true;
                 const loader = document.createElement('div');
                 loader.id = 'cloud-loader';
-                loader.style.cssText = "position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:20px; font-weight:800;";
-                loader.innerHTML = '<div style="font-size:50px; margin-bottom:20px;">☁️</div><div>Syncing Profile...</div>';
+                loader.style.cssText = "position:fixed; inset:0; background:rgba(255,255,255,0.95); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:20px; font-weight:800; color:#333;";
+                loader.innerHTML = '<div style="font-size:60px; margin-bottom:20px;">☁️</div><div>Downloading Data...</div><div style="font-size:14px; font-weight:normal; margin-top:10px; color:#666;">Do not close the page!</div>';
                 document.body.appendChild(loader);
             }
 
