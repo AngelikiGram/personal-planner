@@ -1520,10 +1520,16 @@
             userRef = db.collection('users').doc(uid);
             // Listen for changes
             unsubscribe = userRef.onSnapshot(doc => {
-                // Remove loader if present
+                // Remove loader nicely
                 const loader = document.getElementById('cloud-loader');
-                if(loader) loader.remove();
-                isWaitingForSync = false;
+                if(loader) {
+                    loader.innerHTML = '<div style="font-size:50px;">✅</div><div>Synced!</div>';
+                    // clear the lock immediately but remove visual slowly
+                    isWaitingForSync = false;
+                    setTimeout(() => loader.remove(), 800);
+                } else {
+                    isWaitingForSync = false;
+                }
 
                 if (doc.exists) {
                     const d = doc.data();
@@ -1533,27 +1539,49 @@
                     if(d.total !== undefined) total = d.total;
                     
                     try { if(d.vouchers) vouchers = JSON.parse(d.vouchers); } catch(e){ console.error("VC parse err",e); }
-                    try { if(d.customQuests) customQuests = JSON.parse(d.customQuests); } catch(e){ console.error("CQ parse err",e); }
-                    try { if(d.customRewards) customRewards = JSON.parse(d.customRewards); } catch(e){ console.error("CR parse err",e); }
+                    
+                    // Safe Parse for Custom Items
+                    try { 
+                        if(d.customQuests) {
+                            const parsed = JSON.parse(d.customQuests);
+                            if(Array.isArray(parsed)) customQuests = parsed;
+                        }
+                    } catch(e){ console.error("CQ parse err",e); }
+
+                    try { 
+                        if(d.customRewards) {
+                            const parsed = JSON.parse(d.customRewards);
+                            if(Array.isArray(parsed)) customRewards = parsed;
+                        }
+                    } catch(e){ console.error("CR parse err",e); }
                     
                     if(d.profile) profile = d.profile;
                     
                     localStorage.setItem('b_coins', coins);
                     localStorage.setItem('b_total', total);
                     localStorage.setItem('b_profile', JSON.stringify(profile));
+                    localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
+                    localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
+                    localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
                     
                     render();
                     document.getElementById('header-avatar').innerText = profile.avatar;
-                    // Update cloud status text if profile modal behaves
+                    // Update cloud status
                     let cloudStatus = document.getElementById('pf-cloud-status');
                     if(cloudStatus) {
-                        cloudStatus.innerText = '✅ Cloud Connected: ' + (auth.currentUser.email || "Shared Profile");
+                        cloudStatus.innerText = '✅ Synced: ' + (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : "Profile");
                         cloudStatus.style.color = '#34c759';
                     }
                 } else {
                     // First time: push local to cloud
                     save(); 
                 }
+            }, err => {
+                // If sync fails, release the lock so they can at least play
+                console.error("Sync failed", err);
+                isWaitingForSync = false;
+                if(loader) loader.innerHTML = '⚠️ Sync Error (Offline?)';
+                setTimeout(() => { if(loader) loader.remove(); }, 2000);
             });
         }
         
