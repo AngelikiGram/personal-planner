@@ -1470,11 +1470,8 @@
             const b = document.getElementById('pf-bio-input').value.trim();
             if (n) profile.name = n;
             profile.bio = b || '';
-            // Save local + cloud
-            localStorage.setItem('b_profile', JSON.stringify(profile));
-            if (db && auth.currentUser) {
-                db.collection('users').doc(auth.currentUser.uid).update({ profile: profile });
-            }
+            
+            save(); // Use unified optimistic save
             
             document.getElementById('pf-name-display').innerText = profile.name;
             document.getElementById('pf-bio-display').innerText = profile.bio;
@@ -1973,13 +1970,10 @@
         function confirmReset() {
             coins = 0; total = 0;
             vouchers = []; customQuests = []; customRewards = [];
-            localStorage.removeItem('b_coins');
-            localStorage.removeItem('b_total');
-            localStorage.removeItem('b_vouchers');
-            localStorage.removeItem('b_custom_quests');
-            localStorage.removeItem('b_custom_rewards');
-            localStorage.removeItem('b_profile');
             profile = { name: 'Adventurer', bio: 'On a quest for greatness!', avatar: '\uD83D\uDC15' };
+            
+            save(); // Triggers optimistic save & cloud sync
+            
             closeReset();
             render();
         }
