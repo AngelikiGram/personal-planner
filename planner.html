@@ -623,9 +623,10 @@
             // Remove fog for clarity
             // scene3d.fog = new THREE.FogExp2(0xaed8f0, 0.015);
             cam3d = new THREE.PerspectiveCamera(48, W / H, 0.1, 200);
-            // Lower camera and zoom in on the map
-            cam3d.position.set(1, 7.5, 5);
-            cam3d.lookAt(1, 0, 2);
+            // Move camera directly above the map, looking straight down
+            cam3d.position.set(0, 25, 0);
+            cam3d.up.set(0, 0, -1); // Ensure north is up
+            cam3d.lookAt(0, 0, 0);
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0); // transparent
             ren3d.setSize(W, H);
@@ -663,9 +664,7 @@
             geo.computeVertexNormals();
             const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ color: 0x5cb338 }));
             mesh.receiveShadow = true; scene3d.add(mesh);
-            const wGeo = new THREE.PlaneGeometry(scaleUp ? 120 : 80, scaleUp ? 120 : 80); wGeo.rotateX(-Math.PI / 2);
-            const water = new THREE.Mesh(wGeo, new THREE.MeshLambertMaterial({ color: 0x4a90d9, transparent: true, opacity: 0.6 }));
-            water.position.y = -0.5; scene3d.add(water);
+            // Removed water plane for field-only map
         }
 
         function mkPath() {
