@@ -1597,37 +1597,50 @@
                 if (doc.exists) {
                     const d = doc.data();
                     
-                    if(d.coins !== undefined) coins = d.coins;
-                    if(d.total !== undefined) total = d.total;
+                    // Conflict Resolution:
+                    // If local data is fresher than or equal to cloud data, DO NOT overwrite local with cloud.
+                    // This allows offline progress to survive until connectivity returns.
+                    const localTime = parseInt(localStorage.getItem('b_lastSaveTime') || '0');
+                    const cloudTime = d.lastSaveTime || 0;
                     
-                    try { if(d.vouchers) vouchers = JSON.parse(d.vouchers); } catch(e){}
-                    
-                    // Safe Parse for Custom Items
-                    try { 
-                        if(d.customQuests) {
-                            const parsed = JSON.parse(d.customQuests);
-                            if(Array.isArray(parsed)) customQuests = parsed;
-                        }
-                    } catch(e){}
+                    if (cloudTime < localTime) {
+                        console.log("Ignored stale cloud data (Local is newer)");
+                    } else {
+                        // Cloud is newer (or same), accept it
+                        if(d.coins !== undefined) coins = d.coins;
+                        if(d.total !== undefined) total = d.total;
 
-                    try { 
-                        if(d.customRewards) {
-                            const parsed = JSON.parse(d.customRewards);
-                            if(Array.isArray(parsed)) customRewards = parsed;
-                        }
-                    } catch(e){}
-                    
-                    if(d.profile) profile = d.profile;
-                    
-                    localStorage.setItem('b_coins', coins);
-                    localStorage.setItem('b_total', total);
-                    localStorage.setItem('b_profile', JSON.stringify(profile));
-                    localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
-                    localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
-                    localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
-                    
-                    render();
-                    document.getElementById('header-avatar').innerText = profile.avatar;
+                        try { if(d.vouchers) vouchers = JSON.parse(d.vouchers); } catch(e){}
+                        
+                        // Safe Parse for Custom Items
+                        try { 
+                            if(d.customQuests) {
+                                const parsed = JSON.parse(d.customQuests);
+                                if(Array.isArray(parsed)) customQuests = parsed;
+                            }
+                        } catch(e){}
+
+                        try { 
+                            if(d.customRewards) {
+                                const parsed = JSON.parse(d.customRewards);
+                                if(Array.isArray(parsed)) customRewards = parsed;
+                            }
+                        } catch(e){}
+                        
+                        if(d.profile) profile = d.profile;
+                        
+                        localStorage.setItem('b_coins', coins);
+                        localStorage.setItem('b_total', total);
+                        localStorage.setItem('b_profile', JSON.stringify(profile));
+                        localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
+                        localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
+                        localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
+                        // Update sync timestamp
+                        if(cloudTime > localTime) localStorage.setItem('b_lastSaveTime', cloudTime);
+                        
+                        render();
+                        document.getElementById('header-avatar').innerText = profile.avatar;
+                    }
                 }
 
                 // 2. LOCK LOGIC (Prevent overwrite until SERVER data arrives)
@@ -1841,26 +1854,23 @@
                 return;
             }
 
+            const timestamp = Date.now();
+            localStorage.setItem('b_lastSaveTime', timestamp);
+
             localStorage.setItem('b_coins', coins);
             localStorage.setItem('b_total', total);
             localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
             localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
             localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
             
-            // Cloud Push
+            // OPTIMISTIC UI: Show success immediately (since local save is done)
+            showSaveIndicator('✅ Saved');
+            setTimeout(() => showSaveIndicator(''), 2000);
+            
+            // Cloud Push (Background)
             if (db && auth.currentUser) {
                 const statusEl = document.getElementById('pf-cloud-status');
-                showSaveIndicator('⏳ Saving...');
-                if(statusEl) statusEl.innerText = '☁️ Saving...';
-                
-                // Track if save is taking too long
-                let isComplete = false;
-                setTimeout(() => {
-                    if(!isComplete) {
-                        showSaveIndicator('🐢 Network Slow (Syncing in background...)');
-                        if(statusEl) statusEl.innerText = '🐢 Network Slow';
-                    }
-                }, 5000);
+                if(statusEl) statusEl.innerText = '☁️ Syncing...';
 
                 db.collection('users').doc(auth.currentUser.uid).set({
                     coins: coins,
@@ -1869,27 +1879,24 @@
                     customQuests: JSON.stringify(customQuests),
                     customRewards: JSON.stringify(customRewards),
                     profile: profile,
-                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    lastSaveTime: timestamp, // Sync timestamp to handle conflicts
+                    serverTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true })
                 .then(() => {
-                    isComplete = true;
-                    console.log("Cloud Save Success");
-                    showSaveIndicator('✅ Saved');
-                    setTimeout(() => showSaveIndicator(''), 2000);
+                    console.log("Cloud Background Sync Success");
                     if(statusEl) {
-                        statusEl.innerText = '✅ Saved';
+                        statusEl.innerText = '✅ Cloud Synced';
                         statusEl.style.color = '#34c759';
                     }
                 })
                 .catch(err => {
-                    isComplete = true;
-                    console.error("Cloud Save Error", err);
-                    alert("Save Error: " + err.message); // Explicit alert for debugging
-                    showSaveIndicator('⚠️ Save Failed');
+                    console.error("Cloud Background Sync Error", err);
                     if(statusEl) {
-                        statusEl.innerText = '⚠️ Save Failed';
-                        statusEl.style.color = 'red';
+                        statusEl.innerText = '⚠️ Sync Pending';
+                        statusEl.style.color = 'orange';
                     }
+                    // We do NOT alert user, to avoid interrupting flow. 
+                    // Local save is secure, cloud will catch up later.
                 });
             }
         }
