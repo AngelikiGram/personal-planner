@@ -1594,16 +1594,28 @@
                 if (doc.exists) {
                     const d = doc.data();
                     
-                    // Conflict Resolution:
-                    // If local data is fresher than or equal to cloud data, DO NOT overwrite local with cloud.
-                    // This allows offline progress to survive until connectivity returns.
+                    // TIMESTAMP SYNC LOGIC
+                    // 1. Get Local Timestamp
                     const localTime = parseInt(localStorage.getItem('b_lastSaveTime') || '0');
-                    const cloudTime = d.lastSaveTime || 0;
                     
-                    if (cloudTime < localTime) {
-                        console.log("Ignored stale cloud data (Local is newer)");
+                    // 2. Get Cloud Timestamp
+                    // Use 'lastSaveTime' (client-set) if available, otherwise fallback to 'serverTimestamp' (approx)
+                    let cloudTime = d.lastSaveTime || 0;
+                    if (!cloudTime && d.lastUpdated) {
+                        // Handle Firestore Timestamp object if present
+                        cloudTime = d.lastUpdated.toMillis ? d.lastUpdated.toMillis() : 0;
+                    }
+
+                    // 3. Decision: Should we overwrite local data with Cloud data?
+                    // - If we are doing the initial Login Load (isWaitingForSync), ALWAYS prefer Cloud (User expects to see their account).
+                    // - OR If Cloud data is newer than Local data.
+                    const shouldSync = isWaitingForSync || (cloudTime >= localTime);
+                    
+                    if (!shouldSync) {
+                        console.log("Ignored stale cloud data (Local is newer or unsure)");
                     } else {
-                        // Cloud is newer (or same), accept it
+                        console.log("Applying Cloud Data...", { isLogin: isWaitingForSync, cloudTime, localTime });
+                        
                         if(d.coins !== undefined) coins = d.coins;
                         if(d.total !== undefined) total = d.total;
 
@@ -1632,8 +1644,9 @@
                         localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
                         localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
                         localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
-                        // Update sync timestamp
-                        if(cloudTime > localTime) localStorage.setItem('b_lastSaveTime', cloudTime);
+                        
+                        // Sync timestamps
+                        localStorage.setItem('b_lastSaveTime', cloudTime || Date.now());
                         
                         render();
                         document.getElementById('header-avatar').innerText = profile.avatar;
