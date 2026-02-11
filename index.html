@@ -1449,7 +1449,7 @@
                     auth.signInWithEmailAndPassword(fakeEmail, fakePass)
                         .then(() => {
                             // alert("Found your Cloud Save! Loading...");
-                            startApp();
+                            startApp(true);
                         })
                         .catch(e => {
                             if(e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-login-credentials') {
@@ -1462,7 +1462,7 @@
                                             profile.name = val;
                                             save(); 
                                             alert("Cloud Profile Created! Sync active.");
-                                            startApp();
+                                            startApp(true);
                                         })
                                         .catch(err => alert("Creation Failed: " + err.message));
                                 }
@@ -1480,8 +1480,21 @@
             }
         }
         
-        function startApp() {
+        let isWaitingForSync = false;
+
+        function startApp(isCloud = false) {
             document.getElementById('login').style.display = 'none';
+            
+            if(isCloud) {
+                // Show blocking loader
+                isWaitingForSync = true;
+                const loader = document.createElement('div');
+                loader.id = 'cloud-loader';
+                loader.style.cssText = "position:fixed; inset:0; background:rgba(255,255,255,0.9); z-index:9999; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:20px; font-weight:800;";
+                loader.innerHTML = '<div style="font-size:50px; margin-bottom:20px;">☁️</div><div>Syncing Profile...</div>';
+                document.body.appendChild(loader);
+            }
+
             init3D();
             document.getElementById('header-avatar').innerText = profile.avatar;
             render();
@@ -1494,13 +1507,10 @@
                     if (u) {
                         console.log("Synced as " + u.uid);
                         setupSync(u.uid);
-                    } else {
-                        // Not signed in. Use anonymous? Or specific?
-                        // For a personal app, assume single user or prompt.
-                        // Let's just do anonymous for now so it works without UI change,
-                        // BUT instruct user they need to sign in for cross-device.
-                        // Actually, I'll add a 'Sync' button in Settings.
-                        auth.signInAnonymously().catch(e => console.error(e));
+                    } else if (isCloud) {
+                         // Should not happen if we just called signIn... but safety catch
+                         console.error("Cloud mode requested but no user found?");
+                         if(document.getElementById('cloud-loader')) document.getElementById('cloud-loader').remove();
                     }
                 });
             }
@@ -1510,6 +1520,11 @@
             userRef = db.collection('users').doc(uid);
             // Listen for changes
             unsubscribe = userRef.onSnapshot(doc => {
+                // Remove loader if present
+                const loader = document.getElementById('cloud-loader');
+                if(loader) loader.remove();
+                isWaitingForSync = false;
+
                 if (doc.exists) {
                     const d = doc.data();
                     console.log("Cloud data received:", d);
@@ -1691,6 +1706,13 @@
         }
 
         function save() {
+            // Safety: Do not save if we are still waiting for initial cloud sync
+            // This prevents overwriting the cloud with empty local data on login
+            if(isWaitingForSync) {
+                console.warn("Save blocked: Still syncing...");
+                return;
+            }
+
             localStorage.setItem('b_coins', coins);
             localStorage.setItem('b_total', total);
             localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
