@@ -1599,22 +1599,35 @@
                     const localTime = parseInt(localStorage.getItem('b_lastSaveTime') || '0');
                     
                     // 2. Get Cloud Timestamp
-                    // Use 'lastSaveTime' (client-set) if available, otherwise fallback to 'serverTimestamp' (approx)
                     let cloudTime = d.lastSaveTime || 0;
                     if (!cloudTime && d.lastUpdated) {
-                        // Handle Firestore Timestamp object if present
                         cloudTime = d.lastUpdated.toMillis ? d.lastUpdated.toMillis() : 0;
                     }
 
-                    // 3. Decision: Should we overwrite local data with Cloud data?
-                    // - If we are doing the initial Login Load (isWaitingForSync), ALWAYS prefer Cloud (User expects to see their account).
-                    // - OR If Cloud data is newer than Local data.
-                    const shouldSync = isWaitingForSync || (cloudTime >= localTime);
+                    // 3. Sync Decision Strategy
+                    // We accept Cloud Data if:
+                    // A. We are in the initial loading phase (isWaitingForSync)
+                    // B. Cloud data is explicitly newer (cloudTime > localTime)
+                    // C. Cloud has MORE progress (total > local total) - catch-up/merge logic
+                    //    (This fixes the 'stuck on old data' issue if timestamps are messy)
                     
+                    const cloudTotal = d.total || 0;
+                    const isNewer = cloudTime > localTime;
+                    const isMoreProgress = cloudTotal > total;
+                    
+                    // If it's a "Pending Write" (our own local save echoing back), ignore conflict checks to prevent loops
+                    const isLocalEcho = doc.metadata.hasPendingWrites; 
+
+                    let shouldSync = false;
+                    
+                    if (isWaitingForSync) shouldSync = true;
+                    else if (isLocalEcho) shouldSync = false; // It's our own data, we already have it
+                    else if (isNewer || isMoreProgress) shouldSync = true;
+
                     if (!shouldSync) {
-                        console.log("Ignored stale cloud data (Local is newer or unsure)");
+                        console.log("Ignored Cloud Data: Local is newer or identical.", { cloudTime, localTime, cloudTotal, total });
                     } else {
-                        console.log("Applying Cloud Data...", { isLogin: isWaitingForSync, cloudTime, localTime });
+                        console.log("Syncing Cloud Data...", { reason: isWaitingForSync ? "Init" : (isNewer ? "Newer" : "Progress"), cloudTotal, total });
                         
                         if(d.coins !== undefined) coins = d.coins;
                         if(d.total !== undefined) total = d.total;
@@ -1645,7 +1658,7 @@
                         localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
                         localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
                         
-                        // Sync timestamps
+                        // Sync timestamps - Set local to cloud time to prevent bounce-back
                         localStorage.setItem('b_lastSaveTime', cloudTime || Date.now());
                         
                         render();
