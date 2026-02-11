@@ -700,6 +700,7 @@
 
         // ============ THREE.JS 3D SCENE ============
         let scene3d, cam3d, ren3d, dogGrp, pathCurve, clock3d;
+        let pathTubeMesh; // Global reference for path coloring
         let locLabels3d = [], targetDogT = 0, currentDogT = 0, sceneReady = false;
         
         // Camera controls
@@ -975,13 +976,21 @@
             
             pathCurve = new THREE.CatmullRomCurve3(pts);
             
-            // Draw the path using TubeGeometry
-            const tube = new THREE.Mesh(
-                new THREE.TubeGeometry(pathCurve, 200, 0.4, 8, false),
-                new THREE.MeshLambertMaterial({ color: 0xc4a070 })
+            // Draw the path using TubeGeometry with Vertex Colors
+            const geo = new THREE.TubeGeometry(pathCurve, 200, 0.4, 8, false);
+            const colors = [];
+            for (let i = 0; i < geo.attributes.position.count; i++) {
+                // Initial color (Sand)
+                colors.push(0.76, 0.62, 0.44);
+            }
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            pathTubeMesh = new THREE.Mesh(
+                geo,
+                new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xffffff })
             );
-            tube.receiveShadow = true; 
-            scene3d.add(tube);
+            pathTubeMesh.receiveShadow = true; 
+            scene3d.add(pathTubeMesh);
         }
 
         function mkDog() {
@@ -1162,6 +1171,32 @@
                 dogGrp.position.copy(pos);
                 dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
                 
+                // Color Path Progress
+                if(pathTubeMesh) {
+                    const colors = pathTubeMesh.geometry.attributes.color;
+                    const count = colors.count; // Vertices
+                    const rings = 201; // 200 Segments + 1
+                    
+                    // Approximate which ring we are at
+                    // If t=0 -> ring 0. If t=1 -> ring 200.
+                    const currentRing = Math.floor(currentDogT * (rings - 1));
+                    const vertsPerRing = count / rings; // Should be 9 (8 radial + 1)
+                    
+                    // c1: GOLD (Done) | c2: SAND (Future)
+                    const c1 = { r: 1.0, g: 0.84, b: 0.0 }; // Gold/Orange-ish
+                    const c2 = { r: 0.76, g: 0.62, b: 0.44 }; // Sand
+                    
+                    for(let i=0; i<count; i++) {
+                        const rIndex = Math.floor(i / vertsPerRing);
+                        if (rIndex <= currentRing) {
+                             colors.setXYZ(i, c1.r, c1.g, c1.b);
+                        } else {
+                             colors.setXYZ(i, c2.r, c2.g, c2.b);
+                        }
+                    }
+                    colors.needsUpdate = true;
+                }
+
                 const lt = Math.min(currentDogT + 0.01, 1);
                 const lp = pathCurve.getPoint(lt);
                 const dir = new THREE.Vector3().subVectors(lp, pos);
