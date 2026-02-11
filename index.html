@@ -605,20 +605,31 @@
         // 3. Add a Web App
         // 4. Paste the 'firebaseConfig' object here:
         const firebaseConfig = {
-            // apiKey: "AIzaSy...",
-            // authDomain: "...",
-            // projectId: "...",
-            // storageBucket: "...",
-            // messagingSenderId: "...",
-            // appId: "..."
+            apiKey: "AIzaSyCMrsI3vi4L4OUveDWsOj1ktgSnKNYdG4o",
+
+            authDomain: "project-planner-21966.firebaseapp.com",
+
+            projectId: "project-planner-21966",
+
+            storageBucket: "project-planner-21966.firebasestorage.app",
+
+            messagingSenderId: "1019453990592",
+
+            appId: "1:1019453990592:web:2c1ad708c2809ed3e06f25",
+
+            measurementId: "G-YQ01HT7F5Z"
         };
+
 
         // Initialize Firebase if config is present
         let db, auth, userRef;
+        window.isFirebaseReady = false;
+        
         if (firebaseConfig.apiKey) {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
             auth = firebase.auth();
+            window.isFirebaseReady = true;
         } else {
             console.log("Firebase not configured - using Local Storage only.");
         }
@@ -1324,23 +1335,25 @@
             document.getElementById('pf-total').innerText = total;
             document.getElementById('pf-vouchers').innerText = vouchers.filter(v => !v.redeemed).length;
             
-            // Sync Button logic
-            let syncBtn = document.getElementById('pf-sync-btn');
-            if(!syncBtn) {
-                 syncBtn = document.createElement('button');
-                 syncBtn.id = 'pf-sync-btn';
-                 syncBtn.className = 'profile-save';
-                 syncBtn.style.background = '#007aff';
-                 syncBtn.style.marginTop = '10px';
-                 syncBtn.innerText = '☁️ Enable Cloud Sync';
-                 syncBtn.onclick = linkCloud;
-                 document.querySelector('.profile-modal').appendChild(syncBtn);
+            // Cloud Status
+            let cloudStatus = document.getElementById('pf-cloud-status');
+            if(!cloudStatus) {
+                 cloudStatus = document.createElement('div');
+                 cloudStatus.id = 'pf-cloud-status';
+                 cloudStatus.style.marginTop = '10px';
+                 cloudStatus.style.fontSize = '12px';
+                 cloudStatus.style.color = '#8e8e93';
+                 cloudStatus.innerText = '☁️ Offline Mode';
+                 document.querySelector('.profile-modal').appendChild(cloudStatus);
             }
-            if(auth && auth.currentUser && !auth.currentUser.isAnonymous) {
-                syncBtn.innerText = '✅ Synced: ' + auth.currentUser.email;
-                syncBtn.style.background = '#34c759';
+            if(window.isFirebaseReady && auth && auth.currentUser) {
+                cloudStatus.innerText = '✅ Cloud Connected: ' + auth.currentUser.email;
+                cloudStatus.style.color = '#34c759';
+                cloudStatus.style.fontWeight = 'bold';
+            } else if (!window.isFirebaseReady) {
+                cloudStatus.innerHTML = '⚠️ <a href="#" onclick="alert(\'You need to add the Firebase Config in the code to enable Cloud Sync!\')">Cloud Not Configured</a>';
             }
-            
+
             // Rank progress
             const rIdx = getRankIdx();
             const nextRank = rIdx < rankData.length - 1 ? rankData[rIdx + 1] : null;
@@ -1377,6 +1390,8 @@
             document.getElementById('pf-avatar-display').innerText = a;
         }
 
+        /* Export/Import removed */
+
         function saveProfile() {
             const n = document.getElementById('pf-name-input').value.trim();
             const b = document.getElementById('pf-bio-input').value.trim();
@@ -1399,44 +1414,47 @@
         }
 
         function enterApp() {
-            const val = document.getElementById('pass').value;
-            // Password 'louis' is local fallback, but if we have firebase, we try email auth
-            // Use simplest approach: If config exists, try to reuse auth OR anon login
-            // But user asked for SYNC, which requires stable identity.
+            const val = document.getElementById('pass').value.trim();
             
-            if (db) {
-                // If using cloud, we need a real ID. 
-                // For simplicity in this personal app, if they type "louis", we sign in anonymously 
-                // BUT anonymous doesn't sync across devices easily unless we link it.
-                // Better: Let's use the input as a "Secret Key" for a shared user account if they want,
-                // or just use 'louis' for local.
-                
-                // Hacky Sync: Use email/pass hardcoded for this "family" app?
-                // Let's prompt sign in if they want to sync.
-                
-                if (val.toLowerCase() === 'louis') {
-                    // Local mode allowed
-                    startApp();
-                } else if (val.includes('@')) {
-                    // Assume it's an email for sync
-                    // We need a password field? The input is type="password".
-                    // Let's assume input is "email|password" or just use a fixed dummy password for the email?
-                    // NO: Security risk. 
+            // LOCAL LOGIN
+            if(val.toLowerCase() === 'louis') {
+                startApp();
+                return;
+            }
+            
+            // CLOUD LOGIN ATTEMPT
+            if (window.isFirebaseReady) {
+                // If they enter something else, try to use it as a "Secret Code" login
+                // We map this secret code to an email like "code@app.com"
+                if (val.length > 3) {
+                    const fakeEmail = val.replace(/\s/g, '') + "@questapp.local";
+                    const fakePass = "secret_" + val.replace(/\s/g, ''); 
                     
-                    // Let's just create a shared account for "louis_family@quest.app" / "louis123"?
-                    // User provided "yes" to sync.
-                    
-                    // Simple path: Sign in Anonymously and attempt to merge? No.
-                    
-                    // Let's just let them in if 'louis', then check Auth state.
-                    startApp();
+                    // Try to login or create
+                    auth.signInWithEmailAndPassword(fakeEmail, fakePass)
+                        .then(() => {
+                            alert("Found your Cloud Save! Loading...");
+                            startApp();
+                        })
+                        .catch(e => {
+                            if(e.code === 'auth/user-not-found') {
+                                // Create new
+                                if(confirm("New profile detected: '" + val + "'. Create new cloud save?")) {
+                                    auth.createUserWithEmailAndPassword(fakeEmail, fakePass)
+                                        .then(() => {
+                                            save(); // Save current local data to this new cloud profile
+                                            startApp();
+                                        });
+                                }
+                            } else {
+                                alert("Login Error: " + e.message);
+                            }
+                        });
                 } else {
-                    alert('Password incorrect / No Sync ID');
+                    alert('Password too short for Cloud Profile.');
                 }
             } else {
-                if(val.toLowerCase() === 'louis') {
-                    startApp();
-                }
+                alert('Password incorrect. (Cloud Sync not configured)');
             }
         }
         
