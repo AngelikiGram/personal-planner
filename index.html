@@ -412,7 +412,7 @@
         .main-split {
             display: flex;
             flex-direction: row;
-            height: 100%;
+            flex: 1;
             overflow: hidden;
         }
         .viewport {
@@ -437,8 +437,8 @@
                 flex-direction: column;
             }
             .viewport {
-                flex: 1; /* Adjusts flex ratio for mobile */
-                min-height: 40vh; /* Ensure 3D view is substantial */
+                flex: 2; /* Increased flex ratio for mobile as requested */
+                min-height: 55vh; /* Ensure 3D view is larger on phone */
             }
             .content {
                 flex: 1.5; /* Give more space to content on mobile */
@@ -759,10 +759,37 @@
             canvas.addEventListener('mousedown', e => onDown(e.clientX, e.clientY, e.button));
             window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', onUp);
+            
+            // Enhanced Touch Support (One finger rotate, two fingers pan)
+            const getTouchCenter = (touches) => {
+                if(touches.length === 2) {
+                    return { x: (touches[0].clientX + touches[1].clientX)/2, y: (touches[0].clientY + touches[1].clientY)/2 };
+                }
+                return { x: touches[0].clientX, y: touches[0].clientY };
+            };
+
             canvas.addEventListener('touchstart', e => { 
-                if(e.touches.length===1) onDown(e.touches[0].clientX, e.touches[0].clientY, 0); 
+                e.preventDefault();
+                if(e.touches.length === 1) {
+                    onDown(e.touches[0].clientX, e.touches[0].clientY, 0); // 0 = rotate
+                } else if (e.touches.length === 2) {
+                    const c = getTouchCenter(e.touches);
+                    onDown(c.x, c.y, 1); // 1 = pan
+                }
             }, {passive:false});
-            window.addEventListener('touchmove', e => { if(isDragging && e.touches.length===1) { e.preventDefault(); onMove(e.touches[0].clientX, e.touches[0].clientY); }}, {passive:false});
+            
+            window.addEventListener('touchmove', e => { 
+                if(!isDragging) return;
+                e.preventDefault();
+                
+                if(e.touches.length === 1 && dragMode === 'rotate') {
+                    onMove(e.touches[0].clientX, e.touches[0].clientY);
+                } else if(e.touches.length === 2 && dragMode === 'pan') {
+                    const c = getTouchCenter(e.touches);
+                    onMove(c.x, c.y);
+                }
+            }, {passive:false});
+            
             window.addEventListener('touchend', onUp);
             canvas.addEventListener('wheel', e => {
                 e.preventDefault();
