@@ -703,7 +703,7 @@
         let locLabels3d = [], targetDogT = 0, currentDogT = 0, sceneReady = false;
         
         // Camera controls
-        let camCtrl = { r: 25, th: 0.5, ph: 1.2 }; // radius, theta, phi
+        let camCtrl = { r: 25, th: 0.2, ph: 1.2 }; // radius, theta, phi (th: 0.2 = rotated right)
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
         let isDragging = false, lastMouse = { x:0, y:0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
@@ -745,7 +745,7 @@
             
             // Camera position for mountain view - side angle looking up slightly
             cam3d.position.set(20, 12, 20); 
-            cam3d.lookAt(0, 4, 0); // Look at mid-mountain
+            cam3d.lookAt(0, 8, 0); // Look higher so terrain sits lower
 
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0); // transparent
@@ -1186,7 +1186,7 @@
             // Camera follow dog with orbit controls
             if (dogGrp) {
                 const target = dogGrp.position.clone().add(camOffset);
-                target.y += 1.5; // Look slightly above dog
+                target.y += 5.0; // Look higher above dog so terrain sits lower
                 
                 // Calculate angle of dog relative to center (0,0) to keep camera "outside"
                 // atan2(x, z) gives the angle from the Z axis.
@@ -1560,10 +1560,16 @@
             const allQuests = quests.concat(customQuests);
             const allShop = shop.concat(customRewards);
             const items = (tab === 'q') ? allQuests : allShop;
-            list.innerHTML = items.map((i, idx) => `
-                <div class="card" style="${tab==='s' && coins < i.p ? 'opacity:0.6' : ''}">
+            const baseLen = (tab === 'q') ? quests.length : shop.length;
+
+            list.innerHTML = items.map((i, idx) => {
+                const isCustom = idx >= baseLen;
+                const customIdx = idx - baseLen;
+                return `
+                <div class="card" style="${tab==='s' && coins < i.p ? 'opacity:0.6' : ''}; position:relative;">
+                    ${isCustom ? `<div onclick="deleteItem('${tab}', ${customIdx})" style="position:absolute; top:8px; right:8px; width:20px; height:20px; text-align:center; line-height:20px; font-size:14px; color:#ff3b30; cursor:pointer; background:rgba(0,0,0,0.05); border-radius:50%; z-index:10;">✕</div>` : ''}
                     <div>
-                        <div style="font-weight:800;">${i.t}</div>
+                        <div style="font-weight:800; padding-right:24px;">${i.t}</div>
                         <div style="font-size:12px; color:#8e8e93;">${i.d || ''}</div>
                         <div style="color:${tab==='q' ? '#ff9500' : 'var(--ios-pink)'}; font-weight:800; margin-top:5px;">
                             ${tab==='q' ? '+'+i.r+' Coins' : 'Price: '+i.p}
@@ -1573,7 +1579,7 @@
                         ${tab==='q' ? 'DONE' : 'BUY'}
                     </button>
                 </div>
-            `).join('');
+            `}).join('');
             list.innerHTML += '<button class="add-quest-btn" onclick="' + (tab==='q' ? 'showAddQuest()' : 'showAddReward()') + '">+ Add ' + (tab==='q' ? 'Quest' : 'Reward') + '</button>';
 
             // Update location label lock/unlock styling
@@ -1594,6 +1600,15 @@
             document.getElementById('tab-q').className = t==='q' ? 'tab active' : 'tab';
             document.getElementById('tab-s').className = t==='s' ? 'tab active' : 'tab';
             render();
+        }
+
+        function deleteItem(type, idx) {
+            if(confirm('Delete this custom item?')) {
+                if (type === 'q') customQuests.splice(idx, 1);
+                else customRewards.splice(idx, 1);
+                save();
+                render();
+            }
         }
 
         function doQuest(amt) {
