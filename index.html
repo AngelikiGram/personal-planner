@@ -1441,8 +1441,9 @@
                 // If they enter something else, try to use it as a "Secret Code" login
                 // We map this secret code to an email like "code@app.com"
                 if (val.length > 3) {
-                    const fakeEmail = val.replace(/\s/g, '') + "@questapp.local";
-                    const fakePass = "secret_" + val.replace(/\s/g, ''); 
+                    const cleanVal = val.trim().toLowerCase(); // Always lowercase for consistency
+                    const fakeEmail = cleanVal.replace(/\s/g, '') + "@questapp.local";
+                    const fakePass = "secret_" + cleanVal.replace(/\s/g, ''); 
                     
                     // Try to login or create
                     auth.signInWithEmailAndPassword(fakeEmail, fakePass)
@@ -1511,11 +1512,15 @@
             unsubscribe = userRef.onSnapshot(doc => {
                 if (doc.exists) {
                     const d = doc.data();
-                    coins = d.coins || 0;
-                    total = d.total || 0;
-                    if(d.vouchers) vouchers = JSON.parse(d.vouchers);
-                    if(d.customQuests) customQuests = JSON.parse(d.customQuests);
-                    if(d.customRewards) customRewards = JSON.parse(d.customRewards);
+                    console.log("Cloud data received:", d);
+                    
+                    if(d.coins !== undefined) coins = d.coins;
+                    if(d.total !== undefined) total = d.total;
+                    
+                    try { if(d.vouchers) vouchers = JSON.parse(d.vouchers); } catch(e){ console.error("VC parse err",e); }
+                    try { if(d.customQuests) customQuests = JSON.parse(d.customQuests); } catch(e){ console.error("CQ parse err",e); }
+                    try { if(d.customRewards) customRewards = JSON.parse(d.customRewards); } catch(e){ console.error("CR parse err",e); }
+                    
                     if(d.profile) profile = d.profile;
                     
                     localStorage.setItem('b_coins', coins);
