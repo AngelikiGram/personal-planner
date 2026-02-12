@@ -103,7 +103,7 @@
             font-weight: 800;
             color: #333;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 20;
+            z-index: 2500;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -522,13 +522,13 @@
             overflow: hidden;
         }
         .viewport {
-            flex: 4;
+            flex: 4.5;
             position: relative;
             overflow: hidden;
             background: transparent;
         }
         .content {
-            flex: 2;
+            flex: 1.5;
             background: #fff;
             border-left: 1px solid #d1d1d6;
             border-top: none;
@@ -544,7 +544,7 @@
             }
             .viewport {
                 flex: 2; /* Increased flex ratio for mobile as requested */
-                min-height: 55vh; /* Ensure 3D view is larger on phone */
+                min-height: 60vh; /* Ensure 3D view is larger on phone */
             }
             .content {
                 flex: 1.5; /* Give more space to content on mobile */
@@ -838,7 +838,7 @@
         const raycaster = new THREE.Raycaster();
         
         // Camera controls
-        let camCtrl = { r: 25, th: 0.2, ph: 1.2 }; // radius, theta, phi (th: 0.2 = rotated right)
+        let camCtrl = { r: 25, th: 0.6, ph: 1.2 }; // radius, theta, phi (th: 0.6 = rotated more to the right)
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
         let isDragging = false, lastMouse = { x:0, y:0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
