@@ -866,9 +866,9 @@
         ];
 
         // Global vertical offset to lift the whole island & sea slightly
-        const TERRAIN_VERTICAL_OFFSET = 2.0; // lowered to bring terrain and sea down
+        const TERRAIN_VERTICAL_OFFSET = 3.5; // increased to raise terrain and all features
         // Global water level (matches water plane y in mkHill)
-        const WATER_LEVEL = -1.0 + TERRAIN_VERTICAL_OFFSET;
+        const WATER_LEVEL = 0.2 + TERRAIN_VERTICAL_OFFSET;
 
         function hillH(x, z) {
             // Mountain shape: combine a sharp central peak with a broad, low base
@@ -901,9 +901,9 @@
             cam3d = new THREE.PerspectiveCamera(43, W / H, 0.1, 200);
             
             // Camera position for mountain view - higher and more to the left
-            cam3d.position.set(10, 30, 25);
+            cam3d.position.set(10, 30, 35);
             // Look slightly lower so more terrain/sea appears higher in the view
-            cam3d.lookAt(0, 18, 0);
+            cam3d.lookAt(0, 9, 0);
 
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0); // transparent
@@ -1037,7 +1037,7 @@
             btn.title = "Re-frame on Dog";
             btn.onclick = () => {
                 camOffset.set(0, 0, 0);
-                camCtrl = { r: 18, th: 0.3, ph: 1.2 };
+                camCtrl = { r: 15, th: 0.5, ph: 1.25 };
             };
             vp.appendChild(btn);
 
