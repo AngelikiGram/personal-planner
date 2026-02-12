@@ -1120,14 +1120,15 @@
             // Cap the ends so it doesn't look hollow
             const startPt = pathCurve.getPointAt(0);
             const endPt = pathCurve.getPointAt(1);
-            const capMat = new THREE.MeshLambertMaterial({ color: 0xc29e70 }); // Sand color match
             
-            const startCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), capMat);
+            const startCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshLambertMaterial({ color: 0xc29e70 }));
             startCap.position.copy(startPt);
+            startCap.name = "path_start_cap";
             scene3d.add(startCap);
 
-            const endCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), capMat);
+            const endCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshLambertMaterial({ color: 0xc29e70 }));
             endCap.position.copy(endPt);
+            endCap.name = "path_end_cap";
             scene3d.add(endCap);
         }
 
@@ -1564,6 +1565,15 @@
                         }
                     }
                     colors.needsUpdate = true;
+                    
+                    // Update Cap Colors
+                    const sCap = scene3d.getObjectByName("path_start_cap");
+                    const eCap = scene3d.getObjectByName("path_end_cap");
+                    const gold = 0xffd700; 
+                    const sand = 0xc29e70;
+
+                    if (sCap) sCap.material.color.setHex(currentDogT >= 0 ? gold : sand); 
+                    if (eCap) eCap.material.color.setHex(currentDogT >= 0.99 ? gold : sand);
                 }
 
                 const lt = Math.min(currentDogT + 0.01, 1);
