@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Grand Adventure 🐾</title>
+    <title>Dogventure 🐾</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
     <!-- Firebase SDKs (Compat version for easier HTML usage) -->
@@ -125,6 +125,8 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             transform-origin: top left;
             animation: menu-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-height: 50vh;
+            overflow-y: auto;
         }
         .loc-list-hud.show { display: flex; }
         
@@ -809,7 +811,7 @@
 
         const locData = [
             { icon: '\uD83C\uDFE0', name: 'Home Base', t: 0 },
-            { icon: '\uD83E\uDDC1', name: 'Bianca’s Bakery', t: 0 }, // Cupcake
+            { icon: '\uD83E\uDDC1', name: 'Bakery', t: 0 }, // Cupcake
             { icon: '\uD83C\uDF6B', name: 'Choco Hill', t: 0 },
             { icon: '\uD83D\uDC28', name: 'Koala Corner', t: 0 }, // Koala
             { icon: '\uD83D\uDC3E', name: 'Puppy Park', t: 0 },
@@ -1250,23 +1252,23 @@
                  // Gold Dome
                  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFD700)); // Gold
                  dome.position.y = 0.7; grp.add(dome);
-            } else if (name === 'Bianca’s Bakery') {
-                // Cupcake Building
-                const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.4, 0.5, 16), mCol(0xFFC0CB)); // Pink wrapper
-                cup.position.y = 0.25; cup.castShadow = true; grp.add(cup);
+            } else if (name === 'Bakery') {
+                // Cupcake Building (Smaller & Cute)
+                const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.4, 16), mCol(0xFFC0CB)); 
+                cup.position.y = 0.2; cup.castShadow = true; grp.add(cup);
                 // Frosting Dome
-                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.48, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFFFFF)); 
-                dome.position.y = 0.5; grp.add(dome);
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFFFFF)); 
+                dome.position.y = 0.4; grp.add(dome);
                 // Sprinkles
                 [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00].forEach((c, i) => {
-                    const s = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.08, 4, 4), mCol(c));
-                    s.position.set(Math.sin(i*2)*0.25, 0.75 + Math.cos(i)*0.05, Math.cos(i*2)*0.25);
+                    const s = new THREE.Mesh(new THREE.CapsuleGeometry(0.025, 0.05, 4, 4), mCol(c));
+                    s.position.set(Math.sin(i*2)*0.2, 0.65 + Math.cos(i)*0.03, Math.cos(i*2)*0.2);
                     s.rotation.set(Math.random(), Math.random(), Math.random());
                     grp.add(s);
                 });
                 // Cherry
-                const cherry = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), mCol(0xD32F2F));
-                cherry.position.set(0, 0.95, 0); grp.add(cherry);
+                const cherry = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mCol(0xD32F2F));
+                cherry.position.set(0, 0.78, 0); grp.add(cherry);
             } else if (name === 'Koala Corner') {
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.7, 8), mCol(0x8B4513));
                 trunk.position.y = 0.35; trunk.castShadow = true; grp.add(trunk);
@@ -1314,20 +1316,20 @@
                 dome.position.y = 0.65; grp.add(dome);
             } else if (name === 'Beaver Lodge') {
                 // Two wood pieces (logs)
-                const logGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.9, 8);
+                const logGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 8);
                 const woodMat = mCol(0x5D4037);
                 
                 const log1 = new THREE.Mesh(logGeo, woodMat);
                 log1.rotation.z = Math.PI / 2; // Lay flat
                 log1.rotation.y = Math.PI / 8; // Slight angle
-                log1.position.y = 0.15;
+                log1.position.y = 0.12;
                 log1.castShadow = true;
                 grp.add(log1);
                 
                 const log2 = new THREE.Mesh(logGeo, woodMat);
                 log2.rotation.z = Math.PI / 2;
                 log2.rotation.y = -Math.PI / 4; // Cross it
-                log2.position.y = 0.3; // Stacked on top
+                log2.position.y = 0.24; // Stacked on top
                 log2.castShadow = true;
                 grp.add(log2);
             } else if (name === 'Penguin Iceberg') {
@@ -1738,7 +1740,7 @@
                     { name: 'Meditation Hour', desc: '60 minutes of pure zen.', reward: 60, type: 'quest' }
                 ]
             },
-            'Bianca’s Bakery': {
+            'Bakery': {
                 desc: 'Freshly baked pink cupcakes and sweet treats.',
                 unlockCoins: 250,
                 activities: [
