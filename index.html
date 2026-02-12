@@ -834,6 +834,7 @@
 
         // ============ THREE.JS 3D SCENE ============
         let scene3d, cam3d, ren3d, dogGrp, pathCurve, clock3d;
+        let world;   
         let ambientLight, sunLight, fillLight;
         let pathTubeMesh; // Global reference for path coloring
         let locLabels3d = [], targetDogT = 0, currentDogT = 0, sceneReady = false;
@@ -843,7 +844,7 @@
         
         // Camera controls
         // More top-down initial view; increase phi to move camera a bit lower
-        let camCtrl = { r: 55, th: 0.6, ph: 1.35 }; // radius, theta, phi
+        let camCtrl = { r: 25, th: 0.7, ph: 1.40 }; // radius, theta, phi
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
         let isDragging = false, lastMouse = { x:0, y:0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
@@ -866,16 +867,16 @@
         ];
 
         // Global vertical offset to lift the whole island & sea slightly
-        const TERRAIN_VERTICAL_OFFSET = 3.5; // increased to raise terrain and all features
+        const TERRAIN_VERTICAL_OFFSET = 0.0; // lowered to bring terrain and sea down
         // Global water level (matches water plane y in mkHill)
-        const WATER_LEVEL = 0.2 + TERRAIN_VERTICAL_OFFSET;
+        const WATER_LEVEL = 0.25 + TERRAIN_VERTICAL_OFFSET;
 
         function hillH(x, z) {
             // Mountain shape: combine a sharp central peak with a broad, low base
             // so the top remains cone-like while the lower slopes flatten out.
             const r2 = x*x + z*z;
             // sharp peak (small spread) + broad base (large spread)
-            const peak = 20 * Math.exp(-r2 / 80);    // central cone-like peak
+            const peak = 10 * Math.exp(-r2 / 80);    // central cone-like peak
             const base = 10 * Math.exp(-r2 / 100);   // broad, low base to flatten lower slopes
             const h = peak + base;
             // Add some noise for ruggedness
@@ -886,49 +887,78 @@
 
         function init3D() {
             const vp = document.getElementById('viewport');
-            // Force a fixed size for the 3D viewport for consistency
-            vp.style.width = '100vw';
-            vp.style.height = '100vh';
-
+            // Allow flex layout to control size, but ensure we fill it
+            vp.style.width = '100%';
+            vp.style.height = '100%'; 
+            
+            // Get actual dimensions
+            const W = vp.clientWidth || 800; 
+            const H = vp.clientHeight || 600;
+            
             scene3d = new THREE.Scene();
+
+            world = new THREE.Group();
+            world.name = "world";
+            scene3d.add(world);
+
+            // Add a soft sky blue background
             scene3d.background = new THREE.Color(0xbfdfff);
-
-            // Get actual dimensions after DOM is ready
-            function setCameraAndRenderer() {
-                const W = vp.offsetWidth;
-                const H = vp.offsetHeight;
-                ren3d.setSize(W, H);
-                cam3d.aspect = W / H;
-                cam3d.updateProjectionMatrix();
-                cam3d.position.set(5, 25, 35);
-                cam3d.lookAt(0, 9, 0);
+            
+            cam3d = new THREE.PerspectiveCamera(53, W / H, 0.1, 200);
+            
+            // Camera position: look at center of terrain from a distance
+            // Find terrain center and set camera
+            mkHill();
+            const terrainMesh = world.getObjectByName("ground_mesh");
+            let center = new THREE.Vector3(0,0,0);
+            let size = new THREE.Vector3(0,0,0);
+            if (terrainMesh) {
+                const box = new THREE.Box3().setFromObject(terrainMesh);
+                center = box.getCenter(new THREE.Vector3());
+                size = box.getSize(new THREE.Vector3());
             }
+            // Place camera so full terrain is visible and centralized, rotated right
+            const camDistance = Math.max(size.x, size.z) * 1.1 + 30;
+            // Move camera to the right and above
+            cam3d.position.set(center.x + size.x * 0.3, center.y + size.y * 1.2 + 20, center.z + camDistance);
+            // Look at center plus half the terrain size
+            const lookAtTarget = new THREE.Vector3(center.x + center.x * 0.5, center.y + center.y * 0.5, center.z + center.x * 0.5);
+            cam3d.lookAt(lookAtTarget);
 
-            cam3d = new THREE.PerspectiveCamera(43, 1, 0.1, 200);
+            // After dog is created, rotate camera to place dog in middle
+            setTimeout(() => {
+                if (dogGrp && pathCurve) {
+                    const dogPos = pathCurve.getPointAt(0); // Dog at t=0
+                    cam3d.position.set(dogPos.x, dogPos.y + size.y * 1.2 + 20, dogPos.z + camDistance);
+                    cam3d.lookAt(dogPos.x, dogPos.y, dogPos.z);
+                    // Rotate dog to face camera
+                    const camDir = new THREE.Vector3().subVectors(cam3d.position, dogPos).normalize();
+                    dogGrp.rotation.y = Math.atan2(camDir.x, camDir.z);
+                }
+            }, 100);
+           
+            world.position.x += 10;
+
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            ren3d.setClearColor(0x000000, 0);
+            ren3d.setClearColor(0x000000, 0); // transparent
+            ren3d.setSize(W, H);
             ren3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             ren3d.shadowMap.enabled = true;
             ren3d.shadowMap.type = THREE.PCFSoftShadowMap;
             ren3d.toneMapping = THREE.ACESFilmicToneMapping;
             ren3d.toneMappingExposure = 1.2;
             vp.appendChild(ren3d.domElement);
-
-            // Set camera and renderer size after DOM is ready and on resize
-            window.addEventListener('DOMContentLoaded', setCameraAndRenderer);
-            window.addEventListener('resize', setCameraAndRenderer);
-            setTimeout(setCameraAndRenderer, 0); // Fallback for async layout
             ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-            scene3d.add(ambientLight);
+            world.add(ambientLight);
             // Keep light colors neutral (white) so scene materials keep their intended colors
             sunLight = new THREE.DirectionalLight(0xffffff, 1.0);
             sunLight.position.set(10, 20, 10); sunLight.castShadow = true;
             sunLight.shadow.mapSize.set(2048, 2048); // Better shadows
             sunLight.shadow.camera.left = -20; sunLight.shadow.camera.right = 20;
             sunLight.shadow.camera.top = 20; sunLight.shadow.camera.bottom = -20;
-            scene3d.add(sunLight);
+            world.add(sunLight);
             fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-            fillLight.position.set(-5, 3, -5); scene3d.add(fillLight);
+            fillLight.position.set(-5, 3, -5); world.add(fillLight);
             mkHill(); mkPath(); mkDog(); mkLocs(); mkTrees(); mkClouds(); mkBoats(); mkFish();
             clock3d = new THREE.Clock(); sceneReady = true;
             window.addEventListener('resize', () => {
@@ -973,9 +1003,6 @@
                 }
                 
                 lastMouse = { x, y };
-
-                
-                console.log("Initial camCtrl:", camCtrl);
             };
             const onUp = () => { isDragging = false; };
             
@@ -1044,7 +1071,7 @@
             btn.title = "Re-frame on Dog";
             btn.onclick = () => {
                 camOffset.set(0, 0, 0);
-                camCtrl = { r: 15, th: 0.5, ph: 1.25 };
+                camCtrl = { r: 5, th: 0.5, ph: 1.25 };
             };
             vp.appendChild(btn);
 
@@ -1162,7 +1189,8 @@
             const mesh = new THREE.Mesh(geo, mat);
             mesh.receiveShadow = true; 
             mesh.name = "ground_mesh";
-            scene3d.add(mesh);
+            mesh.position.z = 10; // Move terrain closer to camera (was -10)
+            world.add(mesh);
             
             // Optional: Add a water plane at y=0 or slightly below
             const waterGeo = new THREE.CircleGeometry(52, 128);
@@ -1176,7 +1204,8 @@
             const water = new THREE.Mesh(waterGeo, waterMat);
             // Use global WATER_LEVEL so water always matches terrain offset
             water.position.y = WATER_LEVEL;
-            scene3d.add(water);
+            water.position.z = 10; // Move water closer to camera (was -10)
+            world.add(water);
         }
 
         function mkPath() {
@@ -1195,10 +1224,10 @@
                 const angle = t * Math.PI * 2 * turns; 
                 
                 const x = Math.cos(angle) * r;
-                const z = Math.sin(angle) * r;
+                const z = Math.sin(angle) * r + 10; // Move path closer to camera (was -10)
                 
                 // Get terrain height
-                const y = hillH(x, z);
+                const y = hillH(x, z - 10); // hillH expects original z (undo new offset)
                 
                 // Offset slightly above terrain
                 pts.push(new THREE.Vector3(x, y + 0.2, z));
@@ -1220,7 +1249,7 @@
                 new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xffffff, side: THREE.DoubleSide })
             );
             pathTubeMesh.receiveShadow = true; 
-            scene3d.add(pathTubeMesh);
+            world.add(pathTubeMesh);
 
             // Cap the ends so it doesn't look hollow
             const startPt = pathCurve.getPointAt(0);
@@ -1229,12 +1258,12 @@
             const startCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshLambertMaterial({ color: 0xc29e70 }));
             startCap.position.copy(startPt);
             startCap.name = "path_start_cap";
-            scene3d.add(startCap);
+            world.add(startCap);
 
             const endCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshLambertMaterial({ color: 0xc29e70 }));
             endCap.position.copy(endPt);
             endCap.name = "path_end_cap";
-            scene3d.add(endCap);
+            world.add(endCap);
         }
 
         function mkDog() {
@@ -1276,7 +1305,7 @@
             const tip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 6, 6), wht);
             tip.position.set(0, 0.22, 0); dogGrp.tail.add(tip);
             dogGrp.scale.set(0.7, 0.7, 0.7);
-            scene3d.add(dogGrp);
+            world.add(dogGrp);
             // Place the dog on the path at t=0 (start)
             // Use getPointAt (ArcLength) to match TubeGeometry texture coordinates
             const dogStart = pathCurve.getPointAt(0); 
@@ -1521,20 +1550,20 @@
                 const obj = mkLocObject(loc.name);
                 // Scale normal - User requested BIGGER
                 obj.scale.set(1.5, 1.5, 1.5); 
-                obj.position.set(p.x, pathSurfaceY, p.z);
+                obj.position.set(p.x, pathSurfaceY, p.z); // Already adjusted by path z
                 
                 // Rotate to align with path tangent
                 const tan = pathCurve.getTangentAt(t);
                 obj.rotation.y = Math.atan2(tan.x, tan.z); // Face along path
                 
                 obj.userData = { loc: loc, isLoc: true };
-                scene3d.add(obj);
+                world.add(obj);
                 clickableObjects.push(obj);
 
                 // If the object sits into the terrain (overlap), nudge it outward radially until it sits above ground.
                 (function ensureAboveTerrain(o) {
                     const clearance = 0.12; // desired minimum clearance above ground
-                    let ox = o.position.x, oz = o.position.z;
+                    let ox = o.position.x, oz = o.position.z + 10; // Undo z offset for terrain check
                     let groundHere = hillH(ox, oz);
                     // If base (approx) is below or too close to ground, move outward
                     if (o.position.y <= groundHere + clearance) {
@@ -1544,8 +1573,8 @@
                         for (let step = 0; step < 24; step++) {
                             radius += 0.9 + Math.random() * 0.6; // push outward
                             const nx = Math.cos(angle) * radius;
-                            const nz = Math.sin(angle) * radius;
-                            const newGround = hillH(nx, nz);
+                            const nz = Math.sin(angle) * radius - 10; // Apply z offset
+                            const newGround = hillH(nx, nz + 10);
                             const newY = newGround + 0.4; // keep object sitting above terrain
                             // if the new location yields enough clearance, adopt it
                             if (newY > newGround + clearance) {
@@ -1557,8 +1586,8 @@
                         if (!moved) {
                             // fallback: small outward nudge
                             const nx = Math.cos(angle) * (radius + 1.2);
-                            const nz = Math.sin(angle) * (radius + 1.2);
-                            const newGround = hillH(nx, nz);
+                            const nz = Math.sin(angle) * (radius + 1.2) - 10;
+                            const newGround = hillH(nx, nz + 10);
                             o.position.set(nx, newGround + 0.4, nz);
                         }
                     }
@@ -1571,9 +1600,9 @@
                 lbl.addEventListener('click', () => showLocDetail(loc));
                 vp.appendChild(lbl);
                 
-                // Label float position above the object
-                // Store object ref for proximity check
-                locLabels3d.push({ el: lbl, world: new THREE.Vector3(obj.position.x, obj.position.y + 1.6, obj.position.z), loc: loc, obj: obj });
+                // Store object ref for proximity check; label position will always be computed from obj position
+                locLabels3d.push({ el: lbl, loc: loc, obj: obj });
+                // Move label DOM element visually in z as well (handled in animation loop if needed)
             });
         }
 
@@ -1621,7 +1650,7 @@
                 // Location collision
                 for(let l of locLabels3d) {
                     // Allow trees closer to locations but still avoid direct overlap
-                    if ((l.world.x-x)**2 + (l.world.z-z)**2 < 3) { safe = false; break; }
+                    if ((l.obj.position.x-x)**2 + (l.obj.position.z-z)**2 < 3) { safe = false; break; }
                 }
                 if(!safe) continue;
 
@@ -1640,8 +1669,8 @@
                     const c = new THREE.Mesh(new THREE.ConeGeometry(tr, thh, 6), tg);
                     c.position.set(0, th + l * 0.3 + 0.15, 0); c.castShadow = true; treeGrp.add(c);
                 }
-                treeGrp.position.set(x, y, z);
-                scene3d.add(treeGrp);
+                treeGrp.position.set(x, y, z + 10); // Move trees closer to camera (was -10)
+                world.add(treeGrp);
             }
 
             const fc = [0xff69b4, 0xff2d55, 0xffeb3b, 0xff9800, 0xba68c8];
@@ -1660,7 +1689,7 @@
                     new THREE.SphereGeometry(0.05+Math.random()*0.03, 6, 6),
                     new THREE.MeshLambertMaterial({ color: fc[Math.floor(Math.random()*fc.length)] })
                 );
-                fl.position.set(fx, fy+0.05, fz); scene3d.add(fl);
+                fl.position.set(fx, fy+0.05, fz + 10); world.add(fl); // Move flowers closer to camera (was -10)
             }
         }
 
@@ -1687,7 +1716,7 @@
                 // No movement data needed - clouds are stationary
                 cg.userData = {};
                 cloudsArr.push(cg);
-                scene3d.add(cg);
+                world.add(cg);
             });
         }
 
@@ -1720,7 +1749,7 @@
                     grp.userData = { angle: ang, radius: r, speed: 0.03 * (0.8 + Math.random() * 1.0) };
                 }
                 boatsArr.push(grp);
-                scene3d.add(grp);
+                world.add(grp);
             }
         }
 
@@ -1738,7 +1767,7 @@
                 body.position.set(Math.cos(ang) * r, depth, Math.sin(ang) * r);
                 body.userData = { angle: ang, radius: r, speed: 0.6 * (0.3 + Math.random() * 0.9), depthBase: depth };
                 fishArr.push(body);
-                scene3d.add(body);
+                world.add(body);
             }
         }
 
@@ -1794,18 +1823,23 @@
             }
             const vp = document.getElementById('viewport');
             const W = vp.clientWidth, H = vp.clientHeight;
-            locLabels3d.forEach(({ el: lbl, world, obj }) => {
-                // Occlusion Check (Raycast from Camera)
+            locLabels3d.forEach(({ el: lbl, obj }) => {
+                // Occlusion Check (Raycast from Camera) -- use label's actual world position above object
                 const ground = scene3d.getObjectByName("ground_mesh");
                 let visible = true;
+                let labelWorld = obj.position.clone();
+                if (typeof world !== 'undefined' && world.position) {
+                    labelWorld.add(world.position);
+                }
+                labelWorld.y += 1.6; // vertical offset above object
                 if(ground) {
-                    const dir = new THREE.Vector3().subVectors(obj.position, cam3d.position);
+                    const dir = new THREE.Vector3().subVectors(labelWorld, cam3d.position);
                     const distToObj = dir.length();
                     raycaster.set(cam3d.position, dir.normalize());
                     const hits = raycaster.intersectObject(ground);
-                    // If terrain blocks view (hit is closer than object)
-                    if(hits.length > 0 && hits[0].distance < distToObj - 2.0) {
-                         visible = false;
+                    // Only hide if terrain is strictly between camera and label
+                    if(hits.length > 0 && hits[0].distance < distToObj) {
+                        visible = false;
                     }
                 }
 
@@ -1845,7 +1879,13 @@
                     });
                 }
 
-                const v = world.clone().project(cam3d);
+                // // Always place label above the object's current world position, including world group offset
+                // let labelWorld = obj.position.clone();
+                // if (typeof world !== 'undefined' && world.position) {
+                //     labelWorld.add(world.position);
+                // }
+                // labelWorld.y += 1.6; // vertical offset above object
+                const v = labelWorld.project(cam3d);
                 if (v.z < 1 && visible) {
                     lbl.style.display = 'block';
                     lbl.style.left = ((v.x*0.5+0.5)*W) + 'px';
@@ -1906,10 +1946,19 @@
                     b.userData.currentDirection += shortestDiff * progress * 0.5;
                 }
 
-                // Position boat based on current phase direction and radius
-                const nxpos = Math.cos(b.userData.currentDirection) * radius;
-                const nzpos = Math.sin(b.userData.currentDirection) * radius;
 
+                // Calculate intended boat position
+                let nxpos = Math.cos(b.userData.currentDirection) * radius;
+                let nzpos = Math.sin(b.userData.currentDirection) * radius;
+                // Check terrain height at intended position
+                let tries = 0;
+                while (hillH(nxpos, nzpos) > WATER_LEVEL - 0.05 && tries < 20) {
+                    // Push boat outward radially until over water
+                    radius += 0.5;
+                    nxpos = Math.cos(b.userData.currentDirection) * radius;
+                    nzpos = Math.sin(b.userData.currentDirection) * radius;
+                    tries++;
+                }
                 b.position.x = nxpos;
                 b.position.z = nzpos;
                 b.position.y = WATER_LEVEL + Math.sin(el * (0.6 + bi * 0.05)) * 0.06;
