@@ -975,6 +975,9 @@
                 lastMouse = { x, y };
             };
             const onUp = () => { isDragging = false; };
+
+            
+            console.log("Initial camCtrl:", camCtrl);
             
             canvas.addEventListener('mousedown', e => onDown(e.clientX, e.clientY, e.button));
             window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
