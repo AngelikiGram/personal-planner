@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>My Boutique 🎀</title>
+    <title>Grand Adventure 🐾</title>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
     <!-- Firebase SDKs (Compat version for easier HTML usage) -->
@@ -65,6 +65,13 @@
             transition: transform 0.15s;
         }
         .loc-label-3d:active { transform: translate(-50%, -100%) scale(0.9); }
+        .loc-label-3d.loc-active .loc-tag-3d {
+            background-color: #ffd60a;
+            transform: scale(1.3);
+            border-width: 2px;
+            box-shadow: 0 4px 12px rgba(255, 214, 10, 0.5);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
         .loc-icon-3d {
             font-size: 22px;
             display: block;
@@ -81,6 +88,81 @@
             display: inline-block;
             backdrop-filter: blur(4px);
         }
+        /* HUD LIST & MENU */
+        .loc-menu-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-weight: 800;
+            color: #333;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 20;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.1s;
+        }
+        .loc-menu-btn:active { transform: scale(0.95); }
+        
+        .loc-list-hud {
+            position: absolute;
+            top: 68px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px;
+            border-radius: 16px;
+            width: 210px;
+            pointer-events: auto;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 4px;
+            z-index: 19;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            transform-origin: top left;
+            animation: menu-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .loc-list-hud.show { display: flex; }
+        
+        @keyframes menu-pop {
+            from { opacity: 0; transform: scale(0.8) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .loc-list-title {
+            font-size: 10px;
+            font-weight: 900;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 4px 8px;
+        }
+        .loc-list-item {
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 10px 12px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+            transition: background 0.2s;
+            background: white;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .loc-list-item:hover { background: #f2f2f7; }
+        .loc-list-item.locked {
+            color: #999;
+            background: #f9f9f9;
+        }
+        .loc-list-item.locked span { filter: grayscale(1); opacity: 0.6; }
+        .loc-list-item .lock-icon { font-size: 10px; margin-left: auto; color: #ccc; }
+        .loc-list-item.locked .lock-icon { content: '🔒'; }
         .loc-tag-3d.unlocked { border-color: var(--ios-pink); background: rgba(255,230,238,0.95); }
         .loc-tag-3d.locked { opacity: 0.5; }
 
@@ -717,6 +799,8 @@
         let scene3d, cam3d, ren3d, dogGrp, pathCurve, clock3d;
         let pathTubeMesh; // Global reference for path coloring
         let locLabels3d = [], targetDogT = 0, currentDogT = 0, sceneReady = false;
+        let clickableObjects = [];
+        const raycaster = new THREE.Raycaster();
         
         // Camera controls
         let camCtrl = { r: 25, th: 0.2, ph: 1.2 }; // radius, theta, phi (th: 0.2 = rotated right)
@@ -725,13 +809,20 @@
 
         const locData = [
             { icon: '\uD83C\uDFE0', name: 'Home Base', t: 0 },
-            { icon: '\uD83C\uDF6B', name: 'Choco Hill', t: 1/7 },
-            { icon: '\uD83D\uDC3E', name: 'Puppy Park', t: 2/7 },
-            { icon: '\uD83E\uDDCB', name: 'Bubble Tea', t: 3/7 },
-            { icon: '\uD83D\uDECD\uFE0F', name: 'Shopping City', t: 4/7 },
-            { icon: '\uD83C\uDF63', name: 'Sushi Palace', t: 5/7 },
-            { icon: '\uD83E\uDDDF\u200D\u2640\uFE0F', name: 'Spa Island', t: 6/7 },
-            { icon: '\uD83E\uDE70', name: 'Opera House', t: 1 }
+            { icon: '\uD83E\uDDC1', name: 'Bianca’s Bakery', t: 0 }, // Cupcake
+            { icon: '\uD83C\uDF6B', name: 'Choco Hill', t: 0 },
+            { icon: '\uD83D\uDC28', name: 'Koala Corner', t: 0 }, // Koala
+            { icon: '\uD83D\uDC3E', name: 'Puppy Park', t: 0 },
+            { icon: '\uD83E\uDDCB', name: 'Bubble Tea', t: 0 },
+            { icon: '\uD83C\uDF80', name: 'Pink Boutique', t: 0 }, // Ribbon
+            { icon: '\uD83D\uDECD\uFE0F', name: 'Shopping City', t: 0 },
+            { icon: '\uD83C\uDFAC', name: 'Cozy Cinema', t: 0 }, // Clapper
+            { icon: '\uD83C\uDF63', name: 'Sushi Palace', t: 0 },
+            { icon: '\uD83C\uDFFA', name: 'Greek Taverna', t: 0 }, // Amphora
+            { icon: '\uD83E\uDDDF\u200D\u2640\uFE0F', name: 'Spa Island', t: 0 },
+            { icon: '🦫', name: 'Beaver Lodge', t: 0 }, // Beaver
+            { icon: '\uD83D\uDC27', name: 'Penguin Iceberg', t: 0 }, // Penguin
+            { icon: '\uD83E\uDE70', name: 'Opera House', t: 0 }
         ];
 
         function hillH(x, z) {
@@ -831,6 +922,23 @@
             canvas.addEventListener('mousedown', e => onDown(e.clientX, e.clientY, e.button));
             window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', onUp);
+
+            canvas.addEventListener('click', e => {
+                const rect = canvas.getBoundingClientRect();
+                const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+                raycaster.setFromCamera({ x, y }, cam3d);
+                const intersects = raycaster.intersectObjects(clickableObjects, true);
+                if (intersects.length > 0) {
+                    let target = intersects[0].object;
+                    while(target && (!target.userData || !target.userData.isLoc)) {
+                        target = target.parent;
+                    }
+                    if (target && target.userData && target.userData.loc) {
+                        showLocDetail(target.userData.loc);
+                    }
+                }
+            });
             
             // Enhanced Touch Support (One finger rotate, two fingers pan)
             const getTouchCenter = (touches) => {
@@ -1002,10 +1110,23 @@
 
             pathTubeMesh = new THREE.Mesh(
                 geo,
-                new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xffffff })
+                new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xffffff, side: THREE.DoubleSide })
             );
             pathTubeMesh.receiveShadow = true; 
             scene3d.add(pathTubeMesh);
+
+            // Cap the ends so it doesn't look hollow
+            const startPt = pathCurve.getPointAt(0);
+            const endPt = pathCurve.getPointAt(1);
+            const capMat = new THREE.MeshLambertMaterial({ color: 0xc29e70 }); // Sand color match
+            
+            const startCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), capMat);
+            startCap.position.copy(startPt);
+            scene3d.add(startCap);
+
+            const endCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), capMat);
+            endCap.position.copy(endPt);
+            scene3d.add(endCap);
         }
 
         function mkDog() {
@@ -1055,34 +1176,263 @@
             dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
         }
 
+        function mkLocObject(name) {
+            const grp = new THREE.Group();
+            const mCol = (c) => new THREE.MeshLambertMaterial({ color: c });
+            
+            if (name === 'Home Base') {
+                const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.8), mCol(0xeeeeee));
+                base.position.y = 0.3; base.castShadow = true; grp.add(base);
+                const roof = new THREE.Mesh(new THREE.ConeGeometry(0.7, 0.5, 4), mCol(0xff4444));
+                roof.position.y = 0.85; roof.rotation.y = Math.PI/4; roof.castShadow = true; grp.add(roof);
+                const door = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.4), mCol(0x654321));
+                door.position.set(0, 0.3, 0.41); grp.add(door);
+            } else if (name === 'Choco Hill') {
+                 const bar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.5), mCol(0x5D4037));
+                 bar.position.y = 0.15; bar.castShadow = true; grp.add(bar);
+                 for(let i=-1; i<=1; i+=2) {
+                     for(let j=-1; j<=1; j+=2) {
+                         const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.2), mCol(0x4E342E));
+                         b.position.set(i*0.2, 0.25, j*0.12); b.castShadow = true; grp.add(b);
+                     }
+                 }
+            } else if (name === 'Puppy Park') {
+                const boneMat = mCol(0xffffff);
+                const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.6, 8), boneMat);
+                shaft.rotation.z = Math.PI/2; shaft.position.y = 0.2; shaft.castShadow = true; grp.add(shaft);
+                [-0.3, 0.3].forEach(x => {
+                    [-0.1, 0.1].forEach(z => {
+                         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), boneMat);
+                         ball.position.set(x, 0.2, z); ball.castShadow = true; grp.add(ball);
+                    });
+                });
+            } else if (name === 'Bubble Tea') {
+                const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.5, 12), mCol(0xFFCCBC));
+                cup.position.y = 0.25; cup.castShadow = true; grp.add(cup);
+                const lid = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 8, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFFFFF)); 
+                lid.position.y = 0.5; lid.castShadow = true; grp.add(lid);
+                const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), mCol(0x333333));
+                straw.position.set(0.05, 0.5, 0); straw.rotation.z = -0.2; straw.castShadow = true; grp.add(straw);
+            } else if (name === 'Shopping City') {
+                const bag = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.3), mCol(0xFFA726));
+                bag.position.y = 0.25; bag.castShadow = true; grp.add(bag);
+                const handle = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.02, 6, 12, Math.PI), mCol(0x3E2723));
+                handle.position.set(0, 0.5, 0); grp.add(handle);
+            } else if (name === 'Sushi Palace') {
+                const rice = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.25, 12), mCol(0xffffff));
+                rice.rotation.x = Math.PI/2; rice.position.y = 0.3; rice.castShadow = true; grp.add(rice);
+                const nori = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.15, 12, 1, true), new THREE.MeshLambertMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide }));
+                nori.rotation.x = Math.PI/2; nori.position.y = 0.3; grp.add(nori);
+                const fill = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.26, 8), mCol(0xFF5722));
+                fill.rotation.x = Math.PI/2; fill.position.y = 0.3; grp.add(fill);
+            } else if (name === 'Spa Island') {
+                [0.35, 0.25, 0.15].forEach((r, i) => {
+                     const st = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), mCol(0x9E9E9E));
+                     st.scale.y = 0.6;
+                     st.position.y = (i===0 ? 0.1 : (i===1 ? 0.35 : 0.55));
+                     st.castShadow = true;
+                     grp.add(st);
+                });
+            } else if (name === 'Opera House') {
+                 // Steps
+                 const step1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.8), mCol(0xEEEEEE));
+                 step1.position.y = 0.05; grp.add(step1);
+                 const step2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.6), mCol(0xEEEEEE));
+                 step2.position.y = 0.15; grp.add(step2);
+                 // Main Building
+                 const build = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.4), mCol(0xF5F5F5));
+                 build.position.y = 0.45; grp.add(build);
+                 // Pillars
+                 [-0.3, -0.1, 0.1, 0.3].forEach(x => {
+                     const p = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), mCol(0xDDDDDD));
+                     p.position.set(x, 0.45, 0.22); grp.add(p);
+                 });
+                 // Gold Dome
+                 const dome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFD700)); // Gold
+                 dome.position.y = 0.7; grp.add(dome);
+            } else if (name === 'Bianca’s Bakery') {
+                // Cupcake Building
+                const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.4, 0.5, 16), mCol(0xFFC0CB)); // Pink wrapper
+                cup.position.y = 0.25; cup.castShadow = true; grp.add(cup);
+                // Frosting Dome
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.48, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFFFFF)); 
+                dome.position.y = 0.5; grp.add(dome);
+                // Sprinkles
+                [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00].forEach((c, i) => {
+                    const s = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, 0.08, 4, 4), mCol(c));
+                    s.position.set(Math.sin(i*2)*0.25, 0.75 + Math.cos(i)*0.05, Math.cos(i*2)*0.25);
+                    s.rotation.set(Math.random(), Math.random(), Math.random());
+                    grp.add(s);
+                });
+                // Cherry
+                const cherry = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), mCol(0xD32F2F));
+                cherry.position.set(0, 0.95, 0); grp.add(cherry);
+            } else if (name === 'Koala Corner') {
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.7, 8), mCol(0x8B4513));
+                trunk.position.y = 0.35; trunk.castShadow = true; grp.add(trunk);
+                // Round canopy (Deciduous)
+                const leavesMat = mCol(0x4CAF50); 
+                const l1 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 0), leavesMat);
+                l1.position.y = 0.8; grp.add(l1);
+                [0, 2, 4].forEach(i => {
+                    const l = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 0), leavesMat);
+                    l.position.set(Math.sin(i)*0.3, 0.7, Math.cos(i)*0.3);
+                    grp.add(l);
+                });
+                
+                // Koala
+                const kBody = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mCol(0x9E9E9E)); 
+                kBody.position.set(0, 0.5, 0.16); grp.add(kBody); // Sitting on trunk
+                const kHead = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mCol(0x9E9E9E));
+                kHead.position.set(0, 0.62, 0.19); grp.add(kHead);
+                const kEarL = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4, 4), mCol(0x9E9E9E));
+                kEarL.position.set(-0.07, 0.68, 0.18); grp.add(kEarL);
+                const kEarR = new THREE.Mesh(new THREE.SphereGeometry(0.04, 4, 4), mCol(0x9E9E9E));
+                kEarR.position.set(0.07, 0.68, 0.18); grp.add(kEarR);
+            } else if (name === 'Pink Boutique') {
+                const build = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.6, 0.5), mCol(0xFFFFFF));
+                build.position.y = 0.3; build.castShadow = true; grp.add(build);
+                const roof = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.6), mCol(0xFF69B4));
+                roof.position.y = 0.65; grp.add(roof);
+                const bow = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), mCol(0xFF69B4));
+                bow.position.set(0, 0.75, 0); grp.add(bow);
+            } else if (name === 'Cozy Cinema') {
+                const screen = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.1), mCol(0x000000));
+                screen.position.set(0, 0.4, -0.2); grp.add(screen);
+                const proj = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 16), mCol(0x333333));
+                proj.rotation.x = Math.PI/2; proj.position.set(0, 0.4, 0.4); grp.add(proj);
+            } else if (name === 'Greek Taverna') {
+                const floor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.8), mCol(0xDDDDDD));
+                floor.position.y = 0.05; grp.add(floor);
+                [-0.3, 0.3].forEach(x => {
+                    [-0.3, 0.3].forEach(z => {
+                        const col = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 8), mCol(0xFFFFFF));
+                        col.position.set(x, 0.35, z); grp.add(col);
+                    });
+                });
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0x0099FF)); 
+                dome.position.y = 0.65; grp.add(dome);
+            } else if (name === 'Beaver Lodge') {
+                // Two wood pieces (logs)
+                const logGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.9, 8);
+                const woodMat = mCol(0x5D4037);
+                
+                const log1 = new THREE.Mesh(logGeo, woodMat);
+                log1.rotation.z = Math.PI / 2; // Lay flat
+                log1.rotation.y = Math.PI / 8; // Slight angle
+                log1.position.y = 0.15;
+                log1.castShadow = true;
+                grp.add(log1);
+                
+                const log2 = new THREE.Mesh(logGeo, woodMat);
+                log2.rotation.z = Math.PI / 2;
+                log2.rotation.y = -Math.PI / 4; // Cross it
+                log2.position.y = 0.3; // Stacked on top
+                log2.castShadow = true;
+                grp.add(log2);
+            } else if (name === 'Penguin Iceberg') {
+                const ice = new THREE.Mesh(new THREE.ConeGeometry(0.6, 0.7, 5), mCol(0xE0F7FA));
+                ice.position.y = 0.35; grp.add(ice);
+                const pBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.1, 0.2, 4, 8), mCol(0x1a1a1a));
+                pBody.position.set(0.2, 0.2, 0.2); grp.add(pBody);
+                const pBelly = new THREE.Mesh(new THREE.CapsuleGeometry(0.08, 0.15, 4, 8), mCol(0xffffff));
+                pBelly.position.set(0.22, 0.2, 0.22); grp.add(pBelly);
+            }
+            else {
+                const box = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5), mCol(0x888888));
+                box.position.y=0.25; grp.add(box);
+            }
+            return grp;
+        }
+
+        function toggleLocMenu() {
+            const m = document.getElementById('loc-list-hud');
+            if(m) m.classList.toggle('show');
+        }
+
+        function updateLocMenu() {
+            const hud = document.getElementById('loc-list-hud');
+            if(!hud) return;
+            
+            // Clear existing items (keep title if we want, or just rebuild all)
+            hud.innerHTML = '<div class="loc-list-title">Destinations</div>';
+            
+            locData.forEach(loc => {
+                const feat = locFeatures[loc.name];
+                const unlocked = feat ? (coins >= feat.unlockCoins || total >= feat.unlockCoins) : true;
+                
+                const item = document.createElement('div');
+                item.className = 'loc-list-item ' + (unlocked ? 'unlocked' : 'locked');
+                item.onclick = () => {
+                    showLocDetail(loc);
+                    if(window.innerWidth < 600) toggleLocMenu(); // Auto-close on mobile
+                };
+                
+                let html = `<span>${loc.icon}</span> ${loc.name}`;
+                if(!unlocked) {
+                    html += `<div class="lock-icon">🔒</div>`;
+                }
+                item.innerHTML = html;
+                hud.appendChild(item);
+            });
+        }
+
         function mkLocs() {
             const vp = document.getElementById('viewport');
-            // Find the terrain mesh to get its y offset
-            const terrainMesh = scene3d.getObjectByName("ground_mesh");
-            const terrainY = terrainMesh ? terrainMesh.position.y : 0;
-            // Place each location on the path at evenly spaced intervals
+            
+            // 1. Create Menu Button
+            if(!document.getElementById('loc-menu-btn')) {
+                const btn = document.createElement('div');
+                btn.id = 'loc-menu-btn';
+                btn.className = 'loc-menu-btn';
+                btn.innerHTML = '🗺️ Locations';
+                btn.onclick = toggleLocMenu;
+                vp.appendChild(btn);
+            }
+
+            // 2. Create Menu Container
+            if(!document.getElementById('loc-list-hud')) {
+                const hud = document.createElement('div');
+                hud.id = 'loc-list-hud';
+                hud.className = 'loc-list-hud';
+                vp.appendChild(hud);
+            }
+
+            // 3. Initial Populate
+            updateLocMenu();
+
             locData.forEach((loc, idx) => {
                 const t = idx / (locData.length - 1);
-                // Use getPointAt to ensure even physical spacing
+                // Point on Path
                 const p = pathCurve.getPointAt(t);
-                // Recompute y using terrain height at (x, z)
-                const locY = hillH(p.x, p.z) + terrainY;
-                const disc = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.32, 0.32, 0.06, 12),
-                    new THREE.MeshLambertMaterial({ color: 0xffe0b2 })
-                );
-                disc.position.set(p.x, locY + 0.04, p.z); disc.receiveShadow = true; scene3d.add(disc);
-                const pole = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.025, 0.025, 1.0, 6),
-                    new THREE.MeshLambertMaterial({ color: 0x7B5B3A })
-                );
-                pole.position.set(p.x, locY + 0.55, p.z); scene3d.add(pole);
+                
+                // Place on the path, but "higher" (on top of the tube)
+                const pathSurfaceY = p.y + 0.4; 
+                
+                // 3D Object
+                const obj = mkLocObject(loc.name);
+                // Scale normal - User requested BIGGER
+                obj.scale.set(1.5, 1.5, 1.5); 
+                obj.position.set(p.x, pathSurfaceY, p.z);
+                
+                // Rotate to align with path tangent
+                const tan = pathCurve.getTangentAt(t);
+                obj.rotation.y = Math.atan2(tan.x, tan.z); // Face along path
+                
+                obj.userData = { loc: loc, isLoc: true };
+                scene3d.add(obj);
+                clickableObjects.push(obj);
+
+                // Label (With Emoji + Name)
                 const lbl = document.createElement('div');
                 lbl.className = 'loc-label-3d';
                 lbl.innerHTML = '<span class="loc-icon-3d">' + loc.icon + '</span><span class="loc-tag-3d">' + loc.name + '</span>';
                 lbl.addEventListener('click', () => showLocDetail(loc));
                 vp.appendChild(lbl);
-                locLabels3d.push({ el: lbl, world: new THREE.Vector3(p.x, locY + 1.3, p.z), loc: loc });
+                
+                // Label float position above the object
+                // Store object ref for proximity check
+                locLabels3d.push({ el: lbl, world: new THREE.Vector3(p.x, pathSurfaceY + 2.0, p.z), loc: loc, obj: obj });
             });
         }
 
@@ -1226,9 +1576,59 @@
             }
             const vp = document.getElementById('viewport');
             const W = vp.clientWidth, H = vp.clientHeight;
-            locLabels3d.forEach(({ el: lbl, world }) => {
+            locLabels3d.forEach(({ el: lbl, world, obj }) => {
+                // Occlusion Check (Raycast from Camera)
+                const ground = scene3d.getObjectByName("ground_mesh");
+                let visible = true;
+                if(ground) {
+                    const dir = new THREE.Vector3().subVectors(obj.position, cam3d.position);
+                    const distToObj = dir.length();
+                    raycaster.set(cam3d.position, dir.normalize());
+                    const hits = raycaster.intersectObject(ground);
+                    // If terrain blocks view (hit is closer than object)
+                    if(hits.length > 0 && hits[0].distance < distToObj - 2.0) {
+                         visible = false;
+                    }
+                }
+
+                // Proximity Check for visual indication
+                let dist = 999;
+                if(dogGrp && obj) {
+                    dist = dogGrp.position.distanceTo(obj.position);
+                }
+                
+                // If close (e.g. within 3.0 units)
+                if(dist < 3.0) {
+                    lbl.classList.add('loc-active'); 
+                    
+                    // Make transparent using CLONED material to avoid shared-material issues
+                    obj.traverse(c => {
+                        if(c.isMesh) {
+                            if(!c.userData.isTransparentMode) {
+                                c.userData.originalMat = c.material;
+                                const m = c.material.clone();
+                                m.transparent = true;
+                                m.opacity = 0.25;
+                                c.material = m;
+                                c.userData.isTransparentMode = true;
+                            }
+                        }
+                    });
+                } else {
+                    lbl.classList.remove('loc-active');
+                    
+                    // Reset to original material
+                    obj.traverse(c => {
+                        if(c.isMesh && c.userData.isTransparentMode) {
+                            c.material.dispose(); // Start fresh next time
+                            c.material = c.userData.originalMat;
+                            c.userData.isTransparentMode = false;
+                        }
+                    });
+                }
+
                 const v = world.clone().project(cam3d);
-                if (v.z < 1) {
+                if (v.z < 1 && visible) {
                     lbl.style.display = 'block';
                     lbl.style.left = ((v.x*0.5+0.5)*W) + 'px';
                     lbl.style.top = ((-v.y*0.5+0.5)*H) + 'px';
@@ -1336,6 +1736,62 @@
                 activities: [
                     { name: 'Face Mask Session', desc: 'Pamper yourself like royalty.', reward: 35, type: 'quest' },
                     { name: 'Meditation Hour', desc: '60 minutes of pure zen.', reward: 60, type: 'quest' }
+                ]
+            },
+            'Bianca’s Bakery': {
+                desc: 'Freshly baked pink cupcakes and sweet treats.',
+                unlockCoins: 250,
+                activities: [
+                    { name: 'Decorate Cupcake', desc: 'Add sprinkles and cherries!', reward: 20, type: 'quest' },
+                    { name: 'Eat Croissant', desc: 'Buttery goodness.', reward: 10, type: 'quest' }
+                ]
+            },
+            'Koala Corner': {
+                desc: 'A cozy tree for naps and cuddles.',
+                unlockCoins: 1000,
+                activities: [
+                    { name: 'Hug a Tree', desc: 'Channel your inner koala.', reward: 30, type: 'quest' },
+                    { name: 'Power Nap', desc: 'Sleep for 20 hours (or 20 mins).', reward: 50, type: 'quest' }
+                ]
+            },
+            'Pink Boutique': {
+                desc: 'Everything belongs to Bianca here.',
+                unlockCoins: 4000,
+                activities: [
+                    { name: 'Buy Earrings', desc: 'Shiny things are best.', reward: 40, type: 'quest' },
+                    { name: 'Lace Shopping', desc: 'Find the perfect fit.', reward: 45, type: 'quest' }
+                ]
+            },
+            'Cozy Cinema': {
+                desc: 'Movies under the stars with blankets.',
+                unlockCoins: 6000,
+                activities: [
+                    { name: 'Watch RomCom', desc: 'Cry happy tears.', reward: 35, type: 'quest' },
+                    { name: 'Popcorn Feast', desc: 'Sweet or salty? Both!', reward: 15, type: 'quest' }
+                ]
+            },
+            'Greek Taverna': {
+                desc: 'Opa! Delicious food and smashing plates.',
+                unlockCoins: 8500,
+                activities: [
+                    { name: 'Sirtaki Dance', desc: 'Dance until you drop.', reward: 50, type: 'quest' },
+                    { name: 'Plate Smashing', desc: 'Release some stress!', reward: 25, type: 'quest' }
+                ]
+            },
+            'Beaver Lodge': {
+                desc: 'Hard work pays off in this zodiac home.',
+                unlockCoins: 11000,
+                activities: [
+                    { name: 'Build Dam', desc: 'Stack those logs.', reward: 60, type: 'quest' },
+                    { name: 'Gnaw Wood', desc: 'Keep those teeth sharp.', reward: 20, type: 'quest' }
+                ]
+            },
+            'Penguin Iceberg': {
+                desc: 'Slide into fun on the ice.',
+                unlockCoins: 12500,
+                activities: [
+                    { name: 'Belly Slide', desc: 'Wheeeee!', reward: 40, type: 'quest' },
+                    { name: 'Catch Fish', desc: 'Yummy sashim- wait, raw fish.', reward: 50, type: 'quest' }
                 ]
             },
             'Opera House': {
@@ -1729,6 +2185,9 @@
             // Rank Logic
             let idx = getRankIdx();
             document.getElementById('rank-name').innerText = rankData[idx].name;
+
+            // Update Locations Menu (Locks)
+            updateLocMenu();
 
             // Update 3D dog position along path
             updateDog3D(Math.min(coins / 15000, 1));
