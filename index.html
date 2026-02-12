@@ -887,12 +887,20 @@
         function init3D() {
             const vp = document.getElementById('viewport');
             // Allow flex layout to control size, but ensure we fill it
-            vp.style.width = '100%';
-            vp.style.height = '100%'; 
-            
-            // Get actual dimensions
-            const W = vp.clientWidth || 800; 
-            const H = vp.clientHeight || 600;
+            // Ensure viewport always fills window
+            vp.style.position = 'absolute';
+            vp.style.left = '0';
+            vp.style.top = '0';
+            vp.style.width = '100vw';
+            vp.style.height = '100vh';
+            vp.style.minWidth = '100vw';
+            vp.style.minHeight = '100vh';
+            vp.style.maxWidth = '100vw';
+            vp.style.maxHeight = '100vh';
+
+            // Always use actual viewport size
+            const W = Math.max(vp.clientWidth, window.innerWidth);
+            const H = Math.max(vp.clientHeight, window.innerHeight);
             
             scene3d = new THREE.Scene();
             // Add a soft sky blue background
