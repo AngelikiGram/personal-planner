@@ -886,42 +886,42 @@
 
         function init3D() {
             const vp = document.getElementById('viewport');
-            // Allow flex layout to control size, but ensure we fill it
-            // Ensure viewport always fills window
-            vp.style.position = 'absolute';
-            vp.style.left = '0';
-            vp.style.top = '0';
-            vp.style.width = '100vw';
-            vp.style.height = '100vh';
-            vp.style.minWidth = '100vw';
-            vp.style.minHeight = '100vh';
-            vp.style.maxWidth = '100vw';
-            vp.style.maxHeight = '100vh';
+            // Ensure flex layout fills parent
+            vp.style.width = '100%';
+            vp.style.height = '100%';
 
-            // Always use actual viewport size
-            const W = Math.max(vp.clientWidth, window.innerWidth);
-            const H = Math.max(vp.clientHeight, window.innerHeight);
-            
+            function set3DSizeAndCamera() {
+                const W = vp.clientWidth;
+                const H = vp.clientHeight;
+                if (ren3d) {
+                    ren3d.setSize(W, H);
+                    cam3d.aspect = W / H;
+                    cam3d.updateProjectionMatrix();
+                }
+                // Always reset camera to same position/lookAt after resize
+                if (cam3d) {
+                    cam3d.position.set(5, 25, 35);
+                    cam3d.lookAt(0, 9, 0);
+                }
+            }
+
             scene3d = new THREE.Scene();
-            // Add a soft sky blue background
             scene3d.background = new THREE.Color(0xbfdfff);
-            
-            cam3d = new THREE.PerspectiveCamera(43, W / H, 0.1, 200);
-            
-            // Camera position for mountain view - higher and more to the left
-            cam3d.position.set(5, 25, 35);
-            // Look slightly lower so more terrain/sea appears higher in the view
-            cam3d.lookAt(0, 9, 0);
 
+            cam3d = new THREE.PerspectiveCamera(43, 1, 0.1, 200); // aspect set below
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            ren3d.setClearColor(0x000000, 0); // transparent
-            ren3d.setSize(W, H);
+            ren3d.setClearColor(0x000000, 0);
             ren3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             ren3d.shadowMap.enabled = true;
             ren3d.shadowMap.type = THREE.PCFSoftShadowMap;
             ren3d.toneMapping = THREE.ACESFilmicToneMapping;
             ren3d.toneMappingExposure = 1.2;
             vp.appendChild(ren3d.domElement);
+            set3DSizeAndCamera();
+
+            // Also update on DOMContentLoaded in case viewport is not sized yet
+            window.addEventListener('DOMContentLoaded', set3DSizeAndCamera);
+            window.addEventListener('resize', set3DSizeAndCamera);
             ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene3d.add(ambientLight);
             // Keep light colors neutral (white) so scene materials keep their intended colors
