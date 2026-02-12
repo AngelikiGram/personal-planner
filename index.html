@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-        <title>Grand Adventure 🐾</title>
+        <title>Dogventure 🐾</title>
         <link rel="manifest" href="/ios-app/www/manifest.json">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -886,29 +886,25 @@
 
         function init3D() {
             const vp = document.getElementById('viewport');
-            // Ensure flex layout fills parent
-            vp.style.width = '100%';
-            vp.style.height = '100%';
-
-            function set3DSizeAndCamera() {
-                const W = vp.clientWidth;
-                const H = vp.clientHeight;
-                if (ren3d) {
-                    ren3d.setSize(W, H);
-                    cam3d.aspect = W / H;
-                    cam3d.updateProjectionMatrix();
-                }
-                // Always reset camera to same position/lookAt after resize
-                if (cam3d) {
-                    cam3d.position.set(5, 25, 35);
-                    cam3d.lookAt(0, 9, 0);
-                }
-            }
+            // Force a fixed size for the 3D viewport for consistency
+            vp.style.width = '100vw';
+            vp.style.height = '100vh';
 
             scene3d = new THREE.Scene();
             scene3d.background = new THREE.Color(0xbfdfff);
 
-            cam3d = new THREE.PerspectiveCamera(43, 1, 0.1, 200); // aspect set below
+            // Get actual dimensions after DOM is ready
+            function setCameraAndRenderer() {
+                const W = vp.offsetWidth;
+                const H = vp.offsetHeight;
+                ren3d.setSize(W, H);
+                cam3d.aspect = W / H;
+                cam3d.updateProjectionMatrix();
+                cam3d.position.set(5, 25, 35);
+                cam3d.lookAt(0, 9, 0);
+            }
+
+            cam3d = new THREE.PerspectiveCamera(43, 1, 0.1, 200);
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0);
             ren3d.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -917,11 +913,11 @@
             ren3d.toneMapping = THREE.ACESFilmicToneMapping;
             ren3d.toneMappingExposure = 1.2;
             vp.appendChild(ren3d.domElement);
-            set3DSizeAndCamera();
 
-            // Also update on DOMContentLoaded in case viewport is not sized yet
-            window.addEventListener('DOMContentLoaded', set3DSizeAndCamera);
-            window.addEventListener('resize', set3DSizeAndCamera);
+            // Set camera and renderer size after DOM is ready and on resize
+            window.addEventListener('DOMContentLoaded', setCameraAndRenderer);
+            window.addEventListener('resize', setCameraAndRenderer);
+            setTimeout(setCameraAndRenderer, 0); // Fallback for async layout
             ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
             scene3d.add(ambientLight);
             // Keep light colors neutral (white) so scene materials keep their intended colors
