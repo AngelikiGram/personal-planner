@@ -168,18 +168,6 @@
         .loc-tag-3d.unlocked { border-color: var(--ios-pink); background: rgba(255,230,238,0.95); }
         .loc-tag-3d.locked { opacity: 0.5; }
 
-        /* Mobile / iOS safe-area adjustments */
-        :root { --vh: 1vh; --header-h: 64px; }
-
-        @media (max-width: 700px) {
-            body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-            .header { padding-top: calc(12px + env(safe-area-inset-top)); padding-bottom: 12px; }
-            .loc-menu-btn { top: calc(12px + env(safe-area-inset-top)); }
-            .loc-list-hud { top: calc(56px + env(safe-area-inset-top)); left: 12px; width: calc(100% - 24px); max-height: 50vh; overflow-y: auto; }
-            /* Use a JS-driven --vh to avoid browser chrome issues on mobile */
-            .viewport { height: calc(var(--vh, 1vh) * 100 - var(--header-h, 64px)); }
-        }
-
         /* Location Detail Modal */
         .loc-overlay {
             position: fixed; inset: 0;
@@ -556,22 +544,6 @@
             }
         }
     </style>
-    <script>
-        // Ensure mobile viewport units work reliably and measure header height
-        (function(){
-            function setVh() {
-                document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
-                const hdr = document.querySelector('.header');
-                const h = hdr ? Math.round(hdr.getBoundingClientRect().height) : 64;
-                document.documentElement.style.setProperty('--header-h', h + 'px');
-            }
-            window.addEventListener('resize', setVh);
-            window.addEventListener('orientationchange', setVh);
-            window.addEventListener('load', setVh);
-            // run now
-            setVh();
-        })();
-    </script>
 </head>
 <body>
 
@@ -1593,6 +1565,15 @@
                         }
                     }
                     colors.needsUpdate = true;
+                    
+                    // Update Cap Colors
+                    const sCap = scene3d.getObjectByName("path_start_cap");
+                    const eCap = scene3d.getObjectByName("path_end_cap");
+                    const gold = 0xffd700; 
+                    const sand = 0xc29e70;
+
+                    if (sCap) sCap.material.color.setHex(currentDogT >= 0 ? gold : sand); 
+                    if (eCap) eCap.material.color.setHex(currentDogT >= 0.99 ? gold : sand);
                 }
 
                 const lt = Math.min(currentDogT + 0.01, 1);
