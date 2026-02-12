@@ -866,9 +866,9 @@
         ];
 
         // Global vertical offset to lift the whole island & sea slightly
-        const TERRAIN_VERTICAL_OFFSET = 3.5; // increased to raise terrain and all features
+        const TERRAIN_VERTICAL_OFFSET = 2.0; // lowered to bring terrain and sea down
         // Global water level (matches water plane y in mkHill)
-        const WATER_LEVEL = 0.2 + TERRAIN_VERTICAL_OFFSET;
+        const WATER_LEVEL = -1.0 + TERRAIN_VERTICAL_OFFSET;
 
         function hillH(x, z) {
             // Mountain shape: combine a sharp central peak with a broad, low base
