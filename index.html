@@ -900,10 +900,10 @@
             
             cam3d = new THREE.PerspectiveCamera(43, W / H, 0.1, 200);
             
-            // Camera position for mountain view - lowered slightly to match new phi
-            cam3d.position.set(25, 20, 35);
+            // Camera position for mountain view - higher and more to the left
+            cam3d.position.set(10, 30, 25);
             // Look slightly lower so more terrain/sea appears higher in the view
-            cam3d.lookAt(0, 15, 0);
+            cam3d.lookAt(0, 18, 0);
 
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0); // transparent
@@ -1037,7 +1037,7 @@
             btn.title = "Re-frame on Dog";
             btn.onclick = () => {
                 camOffset.set(0, 0, 0);
-                camCtrl = { r: 15, th: 0.5, ph: 1.25 };
+                camCtrl = { r: 18, th: 0.3, ph: 1.2 };
             };
             vp.appendChild(btn);
 
