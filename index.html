@@ -1563,8 +1563,10 @@
         const raycaster = new THREE.Raycaster();
 
         // Camera controls
+        // Camera controls
         // More top-down initial view; increase phi to move camera a bit lower
-        let camCtrl = { r: 48, th: 0.0, ph: 1.45 }; // radius, theta, phi
+        const isMobileScreen = window.innerWidth < 800;
+        let camCtrl = { r: isMobileScreen ? 85 : 55, th: 0.0, ph: 1.35 }; // radius, theta, phi
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
         let isDragging = false, lastMouse = { x: 0, y: 0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
