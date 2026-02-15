@@ -1566,7 +1566,7 @@
         // Camera controls
         // More top-down initial view; increase phi to move camera a bit lower
         const isMobileScreen = window.innerWidth < 800;
-        let camCtrl = { r: isMobileScreen ? 85 : 55, th: 0.0, ph: 1.35 }; // radius, theta, phi
+        let camCtrl = { r: isMobileScreen ? 75 : 55, th: 0.0, ph: 1.35 }; // radius, theta, phi
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
         let isDragging = false, lastMouse = { x: 0, y: 0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
@@ -2789,7 +2789,7 @@
 
             // Camera follow dog with orbit controls
             if (dogGrp) {
-                const target = dogGrp.position.clone().add(camOffset);
+                const target = dogGrp.position.clone().add(world.position).add(camOffset);
                 // Reduce vertical look offset so terrain and sea occupy more upper screen space
                 target.y += 3.5; // Lift focus higher
 
