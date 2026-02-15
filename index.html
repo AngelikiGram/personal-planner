@@ -1566,7 +1566,7 @@
         // Camera controls
         // More top-down initial view; increase phi to move camera a bit lower
         const isMobileScreen = window.innerWidth < 500;
-        let camCtrl = { r: isMobileScreen ? 75 : 38, th: 0.0, ph: 1.45 }; // radius, theta, phi
+        let camCtrl = { r: isMobileScreen ? 75 : 38, th: -0.3, ph: 1.45 }; // radius, theta, phi
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
         let isDragging = false, lastMouse = { x: 0, y: 0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
@@ -1679,10 +1679,10 @@
 
             // Place camera so full terrain is visible and centralized, rotated 45 degrees around center
             const camDistance = Math.max(size.x, size.z) * 1.1 + 30;
-            const angle = Math.PI / 4; // 45 degrees in radians
+            const angle = 3 * Math.PI / 4; // 45 degrees in radians
             const camX = center.x + Math.sin(angle) * camDistance;
             const camZ = center.z + Math.cos(angle) * camDistance;
-            cam3d.position.set(camX - 120, center.y + size.y * 1.2 + 20, camZ);
+            cam3d.position.set(camX, center.y + size.y * 1.2 + 20, camZ);
             cam3d.lookAt(center.x, center.y, center.z);
 
             // (Removed setTimeout that overrides initial camera rotation)
