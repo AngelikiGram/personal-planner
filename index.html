@@ -2570,9 +2570,8 @@
             // Simple small boats that float on the water and slowly orbit
             const boatCount = 15; // Increased count from 7 to 15
             const waterRadius = 52; // matches water geometry radius
-            const terrainRadius = 28; // matches terrain edge in mkHill
-            const minBoatRadius = terrainRadius - 4; // Closer to shore (was -2)
-            const maxBoatRadius = waterRadius - 5; // Keep them more visible (was -1.5)
+            const minBoatRadius = 25; // Close to shore (beach is ~26-28)
+            const maxBoatRadius = 49; // Stay inside water edge (52)
             for (let i = 0; i < boatCount; i++) {
                 const grp = new THREE.Group();
                 const hull = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.22, 0.65), new THREE.MeshPhongMaterial({ color: 0x663300 }));
@@ -2588,20 +2587,9 @@
                 // Full random spread
                 const r = minBoatRadius + (maxBoatRadius - minBoatRadius) * Math.random();
                 // Center around z=10 to match water plane
-                grp.position.set(Math.cos(ang) * r, WATER_LEVEL, Math.sin(ang) * r + 10);
 
-                // ensure initial placement is over water (not shallow terrain)
-                const tx = grp.position.x, tz = grp.position.z;
-                // Check hill height relative to center (tz - 10)
-                if (hillH(tx, tz - 10) > WATER_LEVEL - 0.05) {
-                    // push boat outward to deeper water, but not past maxBoatRadius
-                    const safeRadius = Math.min(maxBoatRadius, r + 3);
-                    grp.userData = { orbitAngle: ang, orbitRadius: safeRadius, orbitSpeed: 0.03 * (0.8 + Math.random() * 1.0) };
-                    grp.position.set(Math.cos(ang) * grp.userData.orbitRadius, WATER_LEVEL, Math.sin(ang) * grp.userData.orbitRadius + 10);
-                } else {
-                    // slightly faster default speeds for a gentle drift (use dt-based update in loop)
-                    grp.userData = { orbitAngle: ang, orbitRadius: r, orbitSpeed: 0.03 * (0.8 + Math.random() * 1.0) };
-                }
+                grp.userData = { orbitAngle: ang, orbitRadius: r, orbitSpeed: 0.03 * (0.8 + Math.random() * 1.0) };
+                grp.position.set(Math.cos(ang) * r, WATER_LEVEL, Math.sin(ang) * r + 10);
                 boatsArr.push(grp);
                 world.add(grp);
             }
@@ -2755,8 +2743,8 @@
                 // Improved: Boats follow smooth circular orbits, always on water, never on terrain
                 const waterRadius = 52;
                 const terrainRadius = 28;
-                const minBoatRadius = terrainRadius - 4;
-                const maxBoatRadius = waterRadius - 1.5;
+                const minBoatRadius = 25;
+                const maxBoatRadius = 49;
                 if (b.userData.orbitAngle === undefined) {
                     // Assign a random orbit radius and speed within allowed range
                     b.userData.orbitRadius = minBoatRadius + (maxBoatRadius - minBoatRadius) * Math.random();
@@ -2768,18 +2756,10 @@
                 // Clamp radius to always be on water
                 let r = b.userData.orbitRadius;
                 r = Math.max(minBoatRadius, Math.min(maxBoatRadius, r));
-                // Find a valid water position (if not, nudge outward)
+
                 let nx = Math.cos(b.userData.orbitAngle) * r;
                 let nz = Math.sin(b.userData.orbitAngle) * r + 10; // offset by 10
-                let tries = 0;
-                // check terrain relative to its center (nz - 10)
-                while (hillH(nx, nz - 10) > WATER_LEVEL - 0.4 && tries < 40) { // Increased safety margin
-                    r += 1.0; // Push out faster
-                    if (r > maxBoatRadius) r = maxBoatRadius;
-                    nx = Math.cos(b.userData.orbitAngle) * r;
-                    nz = Math.sin(b.userData.orbitAngle) * r + 10;
-                    tries++;
-                }
+
                 b.position.x = nx;
                 b.position.z = nz;
                 b.position.y = WATER_LEVEL + Math.sin(el * (0.6 + bi * 0.05)) * 0.06;
