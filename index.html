@@ -1,20 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-        <title>Dogventure 🐾</title>
-        <link rel="manifest" href="/ios-app/www/manifest.json">
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-        <link rel="apple-touch-icon" href="/ios-app/www/icons/icon-192.png">
+    <title>Dogventure 🐾</title>
+    <link rel="manifest" href="/ios-app/www/manifest.json">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="/ios-app/www/icons/icon-192.png">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
     <!-- Firebase SDKs (Compat version for easier HTML usage) -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    
+
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -25,11 +26,14 @@
         }
 
         body {
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             font-family: 'Outfit', sans-serif;
             background-color: #f2f2f7;
-            display: flex; flex-direction: column;
-            height: 100vh; overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
         }
 
         /* --- iOS Header --- */
@@ -37,19 +41,28 @@
             background: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(20px);
             padding: 12px 20px;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             border-bottom: 0.5px solid #d1d1d6;
             z-index: 1000;
         }
 
         .rank-pill {
-            background: var(--ios-pink); color: white;
-            padding: 6px 14px; border-radius: 20px;
-            font-size: 11px; font-weight: 800;
+            background: var(--ios-pink);
+            color: white;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 800;
             box-shadow: 0 4px 10px rgba(255, 45, 85, 0.3);
         }
 
-        .coin-display { font-weight: 900; color: #ff9500; font-size: 18px; }
+        .coin-display {
+            font-weight: 900;
+            color: #ff9500;
+            font-size: 18px;
+        }
 
         /* --- 3D HILL VIEWPORT --- */
         .viewport {
@@ -58,7 +71,11 @@
             position: relative;
             background: transparent;
         }
-        .viewport canvas { display: block; }
+
+        .viewport canvas {
+            display: block;
+        }
+
         .loc-label-3d {
             position: absolute;
             transform: translate(-50%, -100%);
@@ -68,7 +85,11 @@
             z-index: 5;
             transition: transform 0.15s;
         }
-        .loc-label-3d:active { transform: translate(-50%, -100%) scale(0.9); }
+
+        .loc-label-3d:active {
+            transform: translate(-50%, -100%) scale(0.9);
+        }
+
         .loc-label-3d.loc-active .loc-tag-3d {
             background-color: #ffd60a;
             transform: scale(1.3);
@@ -76,13 +97,15 @@
             box-shadow: 0 4px 12px rgba(255, 214, 10, 0.5);
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+
         .loc-icon-3d {
             font-size: 22px;
             display: block;
-            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.3));
         }
+
         .loc-tag-3d {
-            background: rgba(255,255,255,0.92);
+            background: rgba(255, 255, 255, 0.92);
             padding: 1px 6px;
             border-radius: 6px;
             font-size: 8px;
@@ -92,6 +115,7 @@
             display: inline-block;
             backdrop-filter: blur(4px);
         }
+
         /* HUD LIST & MENU */
         .loc-menu-btn {
             position: absolute;
@@ -102,7 +126,7 @@
             border-radius: 20px;
             font-weight: 800;
             color: #333;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             z-index: 2500;
             cursor: pointer;
             display: flex;
@@ -110,8 +134,11 @@
             gap: 8px;
             transition: transform 0.1s;
         }
-        .loc-menu-btn:active { transform: scale(0.95); }
-        
+
+        .loc-menu-btn:active {
+            transform: scale(0.95);
+        }
+
         .loc-list-hud {
             position: absolute;
             top: 68px;
@@ -121,22 +148,33 @@
             border-radius: 16px;
             width: 210px;
             pointer-events: auto;
-            display: none; /* Hidden by default */
+            display: none;
+            /* Hidden by default */
             flex-direction: column;
             gap: 4px;
             z-index: 19;
             backdrop-filter: blur(10px);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
             transform-origin: top left;
             animation: menu-pop 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             max-height: 50vh;
             overflow-y: auto;
         }
-        .loc-list-hud.show { display: flex; }
-        
+
+        .loc-list-hud.show {
+            display: flex;
+        }
+
         @keyframes menu-pop {
-            from { opacity: 0; transform: scale(0.8) translateY(-10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+            from {
+                opacity: 0;
+                transform: scale(0.8) translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .loc-list-title {
@@ -147,6 +185,7 @@
             letter-spacing: 0.5px;
             margin: 4px 8px;
         }
+
         .loc-list-item {
             font-size: 13px;
             font-weight: 600;
@@ -159,363 +198,992 @@
             color: #333;
             transition: background 0.2s;
             background: white;
-            border: 1px solid rgba(0,0,0,0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
-        .loc-list-item:hover { background: #f2f2f7; }
+
+        .loc-list-item:hover {
+            background: #f2f2f7;
+        }
+
         .loc-list-item.locked {
             color: #999;
             background: #f9f9f9;
         }
-        .loc-list-item.locked span { filter: grayscale(1); opacity: 0.6; }
-        .loc-list-item .lock-icon { font-size: 10px; margin-left: auto; color: #ccc; }
-        .loc-list-item.locked .lock-icon { content: '🔒'; }
-        .loc-tag-3d.unlocked { border-color: var(--ios-pink); background: rgba(255,230,238,0.95); }
-        .loc-tag-3d.locked { opacity: 0.5; }
+
+        .loc-list-item.locked span {
+            filter: grayscale(1);
+            opacity: 0.6;
+        }
+
+        .loc-list-item .lock-icon {
+            font-size: 10px;
+            margin-left: auto;
+            color: #ccc;
+        }
+
+        .loc-list-item.locked .lock-icon {
+            content: '🔒';
+        }
+
+        .loc-tag-3d.unlocked {
+            border-color: var(--ios-pink);
+            background: rgba(255, 230, 238, 0.95);
+        }
+
+        .loc-tag-3d.locked {
+            opacity: 0.5;
+        }
 
         /* Mobile / iOS safe-area adjustments */
-        :root { --vh: 1vh; --header-h: 64px; }
+        :root {
+            --vh: 1vh;
+            --header-h: 64px;
+        }
 
         @media (max-width: 700px) {
-            body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-            .header { position: fixed; top: env(safe-area-inset-top, 20px); left: 0; right: 0; z-index: 2000; padding-top: calc(12px + env(safe-area-inset-top, 20px)); padding-bottom: 12px; pointer-events: auto; }
-            .main-split { margin-top: calc(var(--header-h, 64px) + env(safe-area-inset-top, 20px) + 6px); }
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+            }
+
+            .header {
+                position: fixed;
+                top: env(safe-area-inset-top, 20px);
+                left: 0;
+                right: 0;
+                z-index: 2000;
+                padding-top: calc(12px + env(safe-area-inset-top, 20px));
+                padding-bottom: 12px;
+                pointer-events: auto;
+            }
+
+            .main-split {
+                margin-top: calc(var(--header-h, 64px) + env(safe-area-inset-top, 20px) + 6px);
+            }
+
             /* Ensure the button and HUD live within the `.viewport` screen area */
-            .viewport .loc-menu-btn { top: 10px; left: 10px; font-size: 14px; padding: 8px 12px; }
-            .loc-list-hud { top: calc(var(--header-h, 64px) + env(safe-area-inset-top) + 8px); left: 12px; width: calc(100% - 24px); max-height: 48vh; overflow-y: auto; font-size: 13px; }
-            .loc-list-item { font-size: 12px; padding: 8px 10px; }
+            .viewport .loc-menu-btn {
+                top: 10px;
+                left: 10px;
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+
+            .loc-list-hud {
+                top: calc(var(--header-h, 64px) + env(safe-area-inset-top) + 8px);
+                left: 12px;
+                width: calc(100% - 24px);
+                max-height: 48vh;
+                overflow-y: auto;
+                font-size: 13px;
+            }
+
+            .loc-list-item {
+                font-size: 12px;
+                padding: 8px 10px;
+            }
+
             /* Use a JS-driven --vh to avoid browser chrome issues on mobile */
-            .viewport { height: calc(var(--vh, 1vh) * 100 - var(--header-h, 64px)); }
+            .viewport {
+                height: calc(var(--vh, 1vh) * 100 - var(--header-h, 64px));
+            }
         }
 
         /* Location Detail Modal */
         .loc-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.45);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
             z-index: 3000;
-            display: none; align-items: flex-end; justify-content: center;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
         }
-        .loc-overlay.show { display: flex; }
+
+        .loc-overlay.show {
+            display: flex;
+        }
+
         .loc-modal {
-            background: white; border-radius: 22px 22px 0 0; padding: 24px;
-            width: 100%; max-width: 420px; max-height: 65vh;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.2);
+            background: white;
+            border-radius: 22px 22px 0 0;
+            padding: 24px;
+            width: 100%;
+            max-width: 420px;
+            max-height: 65vh;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.2);
             animation: slideUp 0.3s ease-out;
         }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .loc-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-        .loc-header .loc-h-icon { font-size: 42px; }
-        .loc-header .loc-h-info h3 { margin: 0; font-weight: 900; font-size: 18px; }
-        .loc-header .loc-h-info .loc-h-status { font-size: 11px; font-weight: 700; }
-        .loc-h-status.unlocked { color: #34c759; }
-        .loc-h-status.locked { color: #ff3b30; }
-        .loc-activities { overflow-y: auto; max-height: 35vh; }
-        .loc-act-card {
-            background: #f2f2f7; border-radius: 14px; padding: 12px 14px;
-            margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
         }
-        .loc-act-card .la-info { font-weight: 700; font-size: 14px; }
-        .loc-act-card .la-desc { font-size: 11px; color: #8e8e93; }
-        .loc-act-card .la-reward { color: #ff9500; font-weight: 800; font-size: 12px; }
-        .loc-act-btn { background: var(--ios-pink); color: white; border: none; padding: 8px 16px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; }
-        .loc-act-btn:disabled { background: #d1d1d6; }
+
+        .loc-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .loc-header .loc-h-icon {
+            font-size: 42px;
+        }
+
+        .loc-header .loc-h-info h3 {
+            margin: 0;
+            font-weight: 900;
+            font-size: 18px;
+        }
+
+        .loc-header .loc-h-info .loc-h-status {
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .loc-h-status.unlocked {
+            color: #34c759;
+        }
+
+        .loc-h-status.locked {
+            color: #ff3b30;
+        }
+
+        .loc-activities {
+            overflow-y: auto;
+            max-height: 35vh;
+        }
+
+        .loc-act-card {
+            background: #f2f2f7;
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .loc-act-card .la-info {
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .loc-act-card .la-desc {
+            font-size: 11px;
+            color: #8e8e93;
+        }
+
+        .loc-act-card .la-reward {
+            color: #ff9500;
+            font-weight: 800;
+            font-size: 12px;
+        }
+
+        .loc-act-btn {
+            background: var(--ios-pink);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .loc-act-btn:disabled {
+            background: #d1d1d6;
+        }
+
         .loc-close {
-            display: block; width: 100%; margin-top: 12px; background: none; border: none;
-            color: var(--ios-pink); font-weight: 800; font-size: 15px; cursor: pointer; text-align: center;
+            display: block;
+            width: 100%;
+            margin-top: 12px;
+            background: none;
+            border: none;
+            color: var(--ios-pink);
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            text-align: center;
         }
 
         /* Profile overlay */
         .profile-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
             z-index: 3000;
-            display: none; align-items: center; justify-content: center;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
-        .profile-overlay.show { display: flex; }
+
+        .profile-overlay.show {
+            display: flex;
+        }
+
         .profile-modal {
-            background: white; border-radius: 22px; padding: 24px;
-            width: 300px; max-height: 80vh; overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: white;
+            border-radius: 22px;
+            padding: 24px;
+            width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             text-align: center;
         }
+
         .profile-avatar {
-            width: 80px; height: 80px; border-radius: 50%;
-            background: var(--ios-pink); display: flex; align-items: center; justify-content: center;
-            font-size: 40px; margin: 0 auto 12px;
-            box-shadow: 0 4px 15px rgba(255,45,85,0.3);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--ios-pink);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 12px;
+            box-shadow: 0 4px 15px rgba(255, 45, 85, 0.3);
         }
-        .profile-name { font-weight: 900; font-size: 20px; margin-bottom: 4px; }
-        .profile-bio { font-size: 13px; color: #8e8e93; margin-bottom: 16px; }
-        .profile-stats { display: flex; gap: 8px; justify-content: center; margin-bottom: 16px; }
+
+        .profile-name {
+            font-weight: 900;
+            font-size: 20px;
+            margin-bottom: 4px;
+        }
+
+        .profile-bio {
+            font-size: 13px;
+            color: #8e8e93;
+            margin-bottom: 16px;
+        }
+
+        .profile-stats {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
         .pstat {
-            flex: 1; background: #f2f2f7; border-radius: 14px; padding: 10px 6px;
+            flex: 1;
+            background: #f2f2f7;
+            border-radius: 14px;
+            padding: 10px 6px;
             text-align: center;
         }
-        .pstat .pstat-val { font-weight: 900; font-size: 18px; color: var(--ios-pink); }
-        .pstat .pstat-lbl { font-size: 10px; color: #8e8e93; font-weight: 600; }
-        .profile-section { text-align: left; margin-bottom: 14px; }
-        .profile-section label { font-weight: 700; font-size: 12px; color: #8e8e93; display: block; margin-bottom: 4px; }
-        .profile-section input, .profile-section textarea {
-            width: 100%; box-sizing: border-box;
-            padding: 10px; border-radius: 12px; border: 1px solid #ddd;
-            font-size: 14px; font-family: 'Outfit', sans-serif;
+
+        .pstat .pstat-val {
+            font-weight: 900;
+            font-size: 18px;
+            color: var(--ios-pink);
         }
-        .profile-section textarea { resize: none; height: 60px; }
-        .avatar-picker { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 14px; }
+
+        .pstat .pstat-lbl {
+            font-size: 10px;
+            color: #8e8e93;
+            font-weight: 600;
+        }
+
+        .profile-section {
+            text-align: left;
+            margin-bottom: 14px;
+        }
+
+        .profile-section label {
+            font-weight: 700;
+            font-size: 12px;
+            color: #8e8e93;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .profile-section input,
+        .profile-section textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .profile-section textarea {
+            resize: none;
+            height: 60px;
+        }
+
+        .avatar-picker {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
         .avatar-opt {
-            width: 42px; height: 42px; border-radius: 50%; border: 2px solid #ddd;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px; cursor: pointer; background: white;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            background: white;
         }
-        .avatar-opt.selected { border-color: var(--ios-pink); background: #fff0f3; }
-        .profile-save { background: var(--ios-pink); color: white; border: none; padding: 12px; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; width: 100%; margin-top: 6px; }
-        .profile-close { background: none; border: none; color: var(--ios-pink); font-weight: 800; font-size: 15px; cursor: pointer; margin-top: 10px; }
+
+        .avatar-opt.selected {
+            border-color: var(--ios-pink);
+            background: #fff0f3;
+        }
+
+        .profile-save {
+            background: var(--ios-pink);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 6px;
+        }
+
+        .profile-close {
+            background: none;
+            border: none;
+            color: var(--ios-pink);
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
 
         /* --- CONTENT & SHOP --- */
         .content {
-            flex: 1; background: #fff;
+            flex: 1;
+            background: #fff;
             border-top: 1px solid #d1d1d6;
-            display: flex; flex-direction: column;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
-        .tabs { display: flex; background: #f9f9f9; border-bottom: 0.5px solid #d1d1d6; }
-        .tab { flex: 1; padding: 12px 4px; text-align: center; font-weight: 700; color: #8e8e93; font-size: 13px; cursor: pointer; }
-        .tab.active { color: var(--ios-pink); border-bottom: 3px solid var(--ios-pink); }
+        .tabs {
+            display: flex;
+            background: #f9f9f9;
+            border-bottom: 0.5px solid #d1d1d6;
+        }
 
-        .list-container { flex: 1; overflow-y: auto; padding: 15px; }
+        .tab {
+            flex: 1;
+            padding: 12px 4px;
+            text-align: center;
+            font-weight: 700;
+            color: #8e8e93;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            color: var(--ios-pink);
+            border-bottom: 3px solid var(--ios-pink);
+        }
+
+        .list-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
         .card {
-            background: #f2f2f7; border-radius: 18px; padding: 16px; margin-bottom: 12px;
-            display: flex; justify-content: space-between; align-items: center;
+            background: #f2f2f7;
+            border-radius: 18px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .btn-ios {
-            background: var(--ios-pink); color: white; border: none;
-            padding: 10px 20px; border-radius: 12px; font-weight: 700;
+            background: var(--ios-pink);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 700;
         }
-        .btn-ios:disabled { background: #d1d1d6; }
+
+        .btn-ios:disabled {
+            background: #d1d1d6;
+        }
 
         /* Rank Modal */
-        .rank-pill { cursor: pointer; }
+        .rank-pill {
+            cursor: pointer;
+        }
+
         .rank-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
             z-index: 3000;
-            display: none; align-items: center; justify-content: center;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
-        .rank-overlay.show { display: flex; }
+
+        .rank-overlay.show {
+            display: flex;
+        }
+
         .rank-modal {
-            background: white; border-radius: 20px; padding: 24px;
-            width: 280px; max-height: 70vh; text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: 280px;
+            max-height: 70vh;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
         }
-        .rank-modal h3 { margin: 0 0 16px; font-weight: 900; font-size: 18px; }
-        #rank-list { overflow-y: auto; flex: 1; }
+
+        .rank-modal h3 {
+            margin: 0 0 16px;
+            font-weight: 900;
+            font-size: 18px;
+        }
+
+        #rank-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
         .rank-row {
-            display: flex; align-items: center; gap: 12px;
-            padding: 10px 14px; border-radius: 14px; margin-bottom: 8px;
-            background: #f2f2f7; font-weight: 700; font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            margin-bottom: 8px;
+            background: #f2f2f7;
+            font-weight: 700;
+            font-size: 14px;
         }
-        .rank-row.current { background: var(--ios-pink); color: white; }
-        .rank-row .rank-icon { font-size: 22px; }
-        .rank-row .rank-threshold { font-size: 11px; font-weight: 400; margin-left: auto; opacity: 0.7; }
+
+        .rank-row.current {
+            background: var(--ios-pink);
+            color: white;
+        }
+
+        .rank-row .rank-icon {
+            font-size: 22px;
+        }
+
+        .rank-row .rank-threshold {
+            font-size: 11px;
+            font-weight: 400;
+            margin-left: auto;
+            opacity: 0.7;
+        }
+
         .rank-close {
-            margin-top: 14px; background: none; border: none;
-            color: var(--ios-pink); font-weight: 800; font-size: 16px; cursor: pointer;
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: var(--ios-pink);
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         /* Voucher Modal */
         .voucher-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
             z-index: 3000;
-            display: none; align-items: center; justify-content: center;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
-        .voucher-overlay.show { display: flex; }
+
+        .voucher-overlay.show {
+            display: flex;
+        }
+
         .voucher-modal {
-            background: white; border-radius: 20px; padding: 24px;
-            width: 300px; max-height: 70vh; text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            display: flex; flex-direction: column;
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: 300px;
+            max-height: 70vh;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
         }
-        .voucher-modal h3 { margin: 0 0 16px; font-weight: 900; font-size: 18px; }
-        .voucher-list { overflow-y: auto; flex: 1; }
+
+        .voucher-modal h3 {
+            margin: 0 0 16px;
+            font-weight: 900;
+            font-size: 18px;
+        }
+
+        .voucher-list {
+            overflow-y: auto;
+            flex: 1;
+        }
+
         .voucher-card {
             background: linear-gradient(135deg, #fff0f3, #ffe0e6);
             border: 2px dashed var(--ios-pink);
-            border-radius: 14px; padding: 14px; margin-bottom: 10px;
-            text-align: left; position: relative;
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+            text-align: left;
+            position: relative;
         }
-        .voucher-card .v-title { font-weight: 800; font-size: 15px; }
-        .voucher-card .v-date { font-size: 11px; color: #8e8e93; margin-top: 4px; }
+
+        .voucher-card .v-title {
+            font-weight: 800;
+            font-size: 15px;
+        }
+
+        .voucher-card .v-date {
+            font-size: 11px;
+            color: #8e8e93;
+            margin-top: 4px;
+        }
+
         .voucher-card .v-stamp {
-            position: absolute; top: 10px; right: 12px;
+            position: absolute;
+            top: 10px;
+            right: 12px;
             font-size: 24px;
         }
+
         .voucher-card.redeemed {
             background: linear-gradient(135deg, #f0f0f0, #e8e8e8);
             border-color: #ccc;
             opacity: 0.65;
         }
-        .voucher-card.redeemed .v-title { text-decoration: line-through; }
+
+        .voucher-card.redeemed .v-title {
+            text-decoration: line-through;
+        }
+
         .voucher-card .v-status {
-            display: inline-block; margin-top: 8px;
-            font-size: 11px; font-weight: 800; padding: 4px 10px;
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 4px 10px;
             border-radius: 8px;
         }
+
         .voucher-card .v-status.open {
-            background: var(--ios-pink); color: white; cursor: pointer;
+            background: var(--ios-pink);
+            color: white;
+            cursor: pointer;
         }
+
         .voucher-card .v-status.used {
-            background: #d1d1d6; color: #666;
+            background: #d1d1d6;
+            color: #666;
         }
-        .voucher-empty { color: #8e8e93; padding: 30px 0; font-size: 14px; }
+
+        .voucher-empty {
+            color: #8e8e93;
+            padding: 30px 0;
+            font-size: 14px;
+        }
+
         .voucher-close {
-            margin-top: 14px; background: none; border: none;
-            color: var(--ios-pink); font-weight: 800; font-size: 16px; cursor: pointer;
+            margin-top: 14px;
+            background: none;
+            border: none;
+            color: var(--ios-pink);
+            font-weight: 800;
+            font-size: 16px;
+            cursor: pointer;
         }
 
         /* Add Quest Modal */
         .addq-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
             z-index: 3000;
-            display: none; align-items: center; justify-content: center;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
-        .addq-overlay.show { display: flex; }
+
+        .addq-overlay.show {
+            display: flex;
+        }
+
         .addq-modal {
-            background: white; border-radius: 20px; padding: 24px;
-            width: 290px; text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: 290px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
-        .addq-modal h3 { margin: 0 0 16px; font-weight: 900; font-size: 18px; }
+
+        .addq-modal h3 {
+            margin: 0 0 16px;
+            font-weight: 900;
+            font-size: 18px;
+        }
+
         .addq-modal input {
-            width: 100%; box-sizing: border-box;
-            padding: 12px; border-radius: 12px; border: 1px solid #ddd;
-            font-size: 15px; font-family: 'Outfit', sans-serif;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+            font-size: 15px;
+            font-family: 'Outfit', sans-serif;
             margin-bottom: 10px;
         }
-        .addq-modal input[type=number] { -moz-appearance: textfield; }
-        .addq-btns { display: flex; gap: 10px; margin-top: 6px; }
-        .addq-btns button { flex: 1; padding: 12px; border-radius: 12px; font-weight: 700; font-size: 14px; border: none; cursor: pointer; }
-        .addq-btns .addq-save { background: var(--ios-pink); color: white; }
-        .addq-btns .addq-cancel { background: #f2f2f7; color: #333; }
+
+        .addq-modal input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        .addq-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .addq-btns button {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .addq-btns .addq-save {
+            background: var(--ios-pink);
+            color: white;
+        }
+
+        .addq-btns .addq-cancel {
+            background: #f2f2f7;
+            color: #333;
+        }
 
         .add-quest-btn {
-            width: 100%; padding: 14px; border: 2px dashed #d1d1d6;
-            border-radius: 18px; background: none;
-            font-weight: 700; font-size: 14px; color: #8e8e93;
-            cursor: pointer; margin-bottom: 12px;
+            width: 100%;
+            padding: 14px;
+            border: 2px dashed #d1d1d6;
+            border-radius: 18px;
+            background: none;
+            font-weight: 700;
+            font-size: 14px;
+            color: #8e8e93;
+            cursor: pointer;
+            margin-bottom: 12px;
         }
-        .add-quest-btn:active { background: #f2f2f7; }
+
+        .add-quest-btn:active {
+            background: #f2f2f7;
+        }
 
         /* Login Screen */
         #login {
-            position: fixed; inset: 0; background: #fff; z-index: 2000;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            position: fixed;
+            inset: 0;
+            background: #fff;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        .ios-input { padding: 15px; border-radius: 15px; border: 1px solid #ddd; width: 250px; text-align: center; font-size: 18px; margin-bottom: 20px; }
+
+        .ios-input {
+            padding: 15px;
+            border-radius: 15px;
+            border: 1px solid #ddd;
+            width: 250px;
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
 
         /* Black Cat */
         @keyframes cat-appear {
-            0% { transform: scale(0) rotate(-30deg); opacity: 0; }
-            50% { transform: scale(1.15) rotate(5deg); opacity: 1; }
-            100% { transform: scale(1) rotate(0); opacity: 1; }
+            0% {
+                transform: scale(0) rotate(-30deg);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.15) rotate(5deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
         }
+
         @keyframes cat-eyes {
-            0%, 90%, 100% { opacity: 1; }
-            95% { opacity: 0; }
+
+            0%,
+            90%,
+            100% {
+                opacity: 1;
+            }
+
+            95% {
+                opacity: 0;
+            }
         }
+
         @keyframes cat-shake {
-            0%, 100% { transform: translateX(0); }
-            20% { transform: translateX(-8px) rotate(-2deg); }
-            40% { transform: translateX(8px) rotate(2deg); }
-            60% { transform: translateX(-6px) rotate(-1deg); }
-            80% { transform: translateX(6px) rotate(1deg); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20% {
+                transform: translateX(-8px) rotate(-2deg);
+            }
+
+            40% {
+                transform: translateX(8px) rotate(2deg);
+            }
+
+            60% {
+                transform: translateX(-6px) rotate(-1deg);
+            }
+
+            80% {
+                transform: translateX(6px) rotate(1deg);
+            }
         }
+
         @keyframes cat-vanish {
-            0% { transform: scale(1) rotate(0); opacity: 1; }
-            100% { transform: scale(0) rotate(40deg); opacity: 0; }
+            0% {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(0) rotate(40deg);
+                opacity: 0;
+            }
         }
+
         @keyframes penalty-flash {
-            0%, 100% { background: rgba(0,0,0,0.5); }
-            50% { background: rgba(255,0,0,0.35); }
+
+            0%,
+            100% {
+                background: rgba(0, 0, 0, 0.5);
+            }
+
+            50% {
+                background: rgba(255, 0, 0, 0.35);
+            }
         }
+
         .cat-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.5);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
             z-index: 4000;
-            display: none; align-items: center; justify-content: center;
+            display: none;
+            align-items: center;
+            justify-content: center;
             flex-direction: column;
         }
-        .cat-overlay.show { display: flex; }
-        .cat-overlay.penalty { animation: penalty-flash 0.3s 3; }
+
+        .cat-overlay.show {
+            display: flex;
+        }
+
+        .cat-overlay.penalty {
+            animation: penalty-flash 0.3s 3;
+        }
+
         .cat-modal {
             text-align: center;
             animation: cat-appear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
+
         .cat-modal.leaving {
             animation: cat-vanish 0.4s ease-in forwards;
         }
+
         .cat-emoji {
             font-size: 100px;
             display: block;
-            filter: drop-shadow(0 10px 25px rgba(0,0,0,0.5));
+            filter: drop-shadow(0 10px 25px rgba(0, 0, 0, 0.5));
             animation: cat-eyes 4s infinite;
         }
+
         .cat-bubble {
-            background: white; border-radius: 20px; padding: 20px 24px;
-            margin-top: 16px; max-width: 280px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+            background: white;
+            border-radius: 20px;
+            padding: 20px 24px;
+            margin-top: 16px;
+            max-width: 280px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4);
             position: relative;
         }
+
         .cat-bubble::before {
-            content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-            border-left: 10px solid transparent; border-right: 10px solid transparent;
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
             border-bottom: 12px solid white;
         }
+
         .cat-bubble .cat-q {
-            font-weight: 800; font-size: 16px; color: #1a1a1a;
-            margin-bottom: 16px; line-height: 1.4;
+            font-weight: 800;
+            font-size: 16px;
+            color: #1a1a1a;
+            margin-bottom: 16px;
+            line-height: 1.4;
         }
-        .cat-btns { display: flex; gap: 10px; }
+
+        .cat-btns {
+            display: flex;
+            gap: 10px;
+        }
+
         .cat-btns button {
-            flex: 1; padding: 14px; border: none; border-radius: 14px;
-            font-weight: 800; font-size: 15px; cursor: pointer;
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 15px;
+            cursor: pointer;
         }
-        .cat-btn-yes { background: #34c759; color: white; }
-        .cat-btn-no { background: #ff3b30; color: white; }
-        .cat-btn-yes:active { transform: scale(0.95); }
-        .cat-btn-no:active { transform: scale(0.95); }
+
+        .cat-btn-yes {
+            background: #34c759;
+            color: white;
+        }
+
+        .cat-btn-no {
+            background: #ff3b30;
+            color: white;
+        }
+
+        .cat-btn-yes:active {
+            transform: scale(0.95);
+        }
+
+        .cat-btn-no:active {
+            transform: scale(0.95);
+        }
+
         .cat-penalty-txt {
-            color: #ff3b30; font-weight: 900; font-size: 22px;
+            color: #ff3b30;
+            font-weight: 900;
+            font-size: 22px;
             margin-top: 14px;
             animation: cat-shake 0.5s;
         }
+
         .cat-safe-txt {
-            color: #34c759; font-weight: 900; font-size: 18px;
+            color: #34c759;
+            font-weight: 900;
+            font-size: 18px;
             margin-top: 14px;
         }
 
         /* Reset Modal */
         .reset-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.4);
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
             z-index: 5000;
-            display: none; align-items: center; justify-content: center;
+            display: none;
+            align-items: center;
+            justify-content: center;
         }
-        .reset-overlay.show { display: flex; }
+
+        .reset-overlay.show {
+            display: flex;
+        }
+
         .reset-modal {
-            background: white; border-radius: 20px; padding: 24px;
-            width: 280px; text-align: center;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            background: white;
+            border-radius: 20px;
+            padding: 24px;
+            width: 280px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
         }
-        .reset-modal h3 { margin: 0 0 8px; font-weight: 900; font-size: 18px; }
-        .reset-modal p { margin: 0 0 18px; font-size: 13px; color: #8e8e93; }
-        .reset-btns { display: flex; gap: 10px; }
-        .reset-btns button { flex: 1; padding: 13px; border: none; border-radius: 14px; font-weight: 800; font-size: 14px; cursor: pointer; }
-        .reset-btn-cancel { background: #f2f2f7; color: #333; }
-        .reset-btn-confirm { background: #ff3b30; color: white; }
+
+        .reset-modal h3 {
+            margin: 0 0 8px;
+            font-weight: 900;
+            font-size: 18px;
+        }
+
+        .reset-modal p {
+            margin: 0 0 18px;
+            font-size: 13px;
+            color: #8e8e93;
+        }
+
+        .reset-btns {
+            display: flex;
+            gap: 10px;
+        }
+
+        .reset-btns button {
+            flex: 1;
+            padding: 13px;
+            border: none;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .reset-btn-cancel {
+            background: #f2f2f7;
+            color: #333;
+        }
+
+        .reset-btn-confirm {
+            background: #ff3b30;
+            color: white;
+        }
+
         /* Responsive & Main Layout Overrides */
         .main-split {
             display: flex;
@@ -523,12 +1191,14 @@
             flex: 1;
             overflow: hidden;
         }
+
         .viewport {
             flex: 4.5;
             position: relative;
             overflow: hidden;
             background: transparent;
         }
+
         .content {
             flex: 1.5;
             background: #fff;
@@ -544,28 +1214,43 @@
             .main-split {
                 flex-direction: column;
             }
+
             .viewport {
-                flex: 2; /* Increased flex ratio for mobile as requested */
-                min-height: 60vh; /* Ensure 3D view is larger on phone */
+                flex: 2;
+                /* Increased flex ratio for mobile as requested */
+                min-height: 60vh;
+                /* Ensure 3D view is larger on phone */
             }
+
             .content {
-                flex: 1.5; /* Give more space to content on mobile */
+                flex: 1.5;
+                /* Give more space to content on mobile */
                 border-left: none;
                 border-top: 1px solid #d1d1d6;
             }
+
             /* Adjust modals for smaller screens */
-            .modal-content, .cat-bubble, .reset-modal, .ios-input, .btn-ios, .voucher-modal, .addq-modal, .rank-modal {
+            .modal-content,
+            .cat-bubble,
+            .reset-modal,
+            .ios-input,
+            .btn-ios,
+            .voucher-modal,
+            .addq-modal,
+            .rank-modal {
                 width: 90% !important;
                 max-width: 320px !important;
             }
+
             .ios-input {
-                font-size: 16px; /* prevent zoom on focus on iOS */
+                font-size: 16px;
+                /* prevent zoom on focus on iOS */
             }
         }
     </style>
     <script>
         // Ensure mobile viewport units work reliably and measure header height
-        (function(){
+        (function () {
             function setVh() {
                 document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
                 const hdr = document.querySelector('.header');
@@ -580,15 +1265,18 @@
         })();
     </script>
 </head>
+
 <body>
 
     <div id="login">
         <div style="font-size: 80px; margin-bottom: 20px;">🐕</div>
         <h2 style="font-weight: 900;">My Quest</h2>
-        <input type="password" id="pass" class="ios-input" placeholder="World's Best Boarder Collie" oninput="this.value = this.value.toLowerCase()"> 
+        <input type="password" id="pass" class="ios-input" placeholder="World's Best Boarder Collie"
+            oninput="this.value = this.value.toLowerCase()">
         <!-- "Password or Profile Name"> -->
         <button class="btn-ios" style="width: 250px; padding: 15px;" onclick="enterApp()">Unlock Adventure</button>
-        <p style="margin-top: 20px; color: #8e8e93; font-size: 13px; max-width: 260px; text-align: center; line-height: 1.4;">
+        <p
+            style="margin-top: 20px; color: #8e8e93; font-size: 13px; max-width: 260px; text-align: center; line-height: 1.4;">
             ✨ <b>Tip:</b> Enter <b style="color:#000">louis</b> for offline mode.<br>
             Enter a <b style="color:var(--ios-pink)">Unique Name</b> (e.g. AngieWorld) to create a Cloud Save!
         </p>
@@ -598,8 +1286,13 @@
         <div class="rank-pill" id="rank-name" onclick="showRanks()">KOALA</div>
         <div style="display:flex; align-items:center; gap:12px;">
             <div class="coin-display" id="coin-txt">💰 0000</div>
-            <div style="font-size:22px; cursor:pointer; position:relative;" onclick="showVouchers()">🎟️<span id="voucher-badge" style="position:absolute;top:-6px;right:-10px;background:var(--ios-pink);color:white;font-size:10px;font-weight:800;min-width:16px;height:16px;line-height:16px;border-radius:10px;text-align:center;padding:0 4px;display:none;"></span></div>
-            <div id="header-avatar" style="width:30px;height:30px;border-radius:50%;background:var(--ios-pink);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(255,45,85,0.3);" onclick="showProfile()">🐕</div>
+            <div style="font-size:22px; cursor:pointer; position:relative;" onclick="showVouchers()">🎟️<span
+                    id="voucher-badge"
+                    style="position:absolute;top:-6px;right:-10px;background:var(--ios-pink);color:white;font-size:10px;font-weight:800;min-width:16px;height:16px;line-height:16px;border-radius:10px;text-align:center;padding:0 4px;display:none;"></span>
+            </div>
+            <div id="header-avatar"
+                style="width:30px;height:30px;border-radius:50%;background:var(--ios-pink);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 2px 8px rgba(255,45,85,0.3);"
+                onclick="showProfile()">🐕</div>
             <div style="font-size:18px; cursor:pointer; opacity:0.5;" onclick="showReset()">⚙️</div>
         </div>
     </div>
@@ -609,6 +1302,7 @@
         <div class="content">
             <div class="tabs">
                 <div class="tab active" id="tab-q" onclick="setTab('q')">Quests</div>
+                <div class="tab" id="tab-t" onclick="setTab('t')">Timer</div>
                 <div class="tab" id="tab-s" onclick="setTab('s')">Shop</div>
             </div>
             <div class="list-container" id="main-list"></div>
@@ -635,9 +1329,18 @@
             <div class="profile-name" id="pf-name-display">Adventurer</div>
             <div class="profile-bio" id="pf-bio-display">On a quest for greatness!</div>
             <div class="profile-stats">
-                <div class="pstat"><div class="pstat-val" id="pf-coins">0</div><div class="pstat-lbl">COINS</div></div>
-                <div class="pstat"><div class="pstat-val" id="pf-total">0</div><div class="pstat-lbl">TOTAL XP</div></div>
-                <div class="pstat"><div class="pstat-val" id="pf-vouchers">0</div><div class="pstat-lbl">VOUCHERS</div></div>
+                <div class="pstat">
+                    <div class="pstat-val" id="pf-coins">0</div>
+                    <div class="pstat-lbl">COINS</div>
+                </div>
+                <div class="pstat">
+                    <div class="pstat-val" id="pf-total">0</div>
+                    <div class="pstat-lbl">TOTAL XP</div>
+                </div>
+                <div class="pstat">
+                    <div class="pstat-val" id="pf-vouchers">0</div>
+                    <div class="pstat-lbl">VOUCHERS</div>
+                </div>
             </div>
             <div id="pf-extra-stats"></div>
             <div style="text-align:left;font-weight:800;font-size:13px;margin-bottom:8px;">Choose Avatar</div>
@@ -748,26 +1451,26 @@
         // Initialize Firebase if config is present
         let db, auth, userRef;
         window.isFirebaseReady = false;
-        
+
         if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "PASTE_API_KEY_HERE") {
             try {
                 if (!firebase.apps.length) {
-                     firebase.initializeApp(firebaseConfig);
+                    firebase.initializeApp(firebaseConfig);
                 }
-                
+
                 db = firebase.firestore();
                 auth = firebase.auth();
-                
+
                 // Enable Offline Persistence (Makes saves instant & works offline)
                 db.enablePersistence({ synchronizeTabs: true })
-                  .then(() => console.log("Offline persistence enabled"))
-                  .catch((err) => {
-                      if (err.code == 'failed-precondition') {
-                          console.warn("Persistence failed: Multiple tabs open. (Only one tab can sync)");
-                      } else if (err.code == 'unimplemented') {
-                          console.warn("Persistence not supported by browser");
-                      }
-                  });
+                    .then(() => console.log("Offline persistence enabled"))
+                    .catch((err) => {
+                        if (err.code == 'failed-precondition') {
+                            console.warn("Persistence failed: Multiple tabs open. (Only one tab can sync)");
+                        } else if (err.code == 'unimplemented') {
+                            console.warn("Persistence not supported by browser");
+                        }
+                    });
 
                 window.isFirebaseReady = true;
                 console.log("Firebase initialized successfully");
@@ -778,7 +1481,7 @@
         } else {
             console.log("Firebase not configured - using Local Storage only.");
         }
-        
+
         // --- APP STATE ---
         let coins = parseInt(localStorage.getItem('b_coins')) || 0;
         let total = parseInt(localStorage.getItem('b_total')) || 0;
@@ -787,30 +1490,35 @@
         let customRewards = JSON.parse(localStorage.getItem('b_custom_rewards')) || [];
         // Profile handles its own load in init for Firebase, but default here:
         let profile = JSON.parse(localStorage.getItem('b_profile')) || { name: 'Adventurer', bio: 'On a quest for greatness!', avatar: '\uD83D\uDC15' };
-        
+        let treats = parseInt(localStorage.getItem('b_treats')) || 0;
+        let totalStudyMinutes = parseInt(localStorage.getItem('b_totalStudyMinutes')) || 0;
+
         let tab = 'q';
+        let thesisTimer = null;
+        let thesisSeconds = 0;
+        let isThesisRunning = false;
         let catTimer = null;
         let unsubscribe = null; // Firestore listener
 
         const catQuestions = [
-            { q: "Were you punctual at school today?", penalty: 40 },
-            { q: "How clean is your kitchen right now? Be honest!", penalty: 35 },
-            { q: "How clean is your bathroom? Spotless?", penalty: 35 },
-            { q: "How clean is your bedroom? Really?", penalty: 30 },
-            { q: "How clean is the living room?", penalty: 30 },
-            { q: "Did you do something for the master thesis today?", penalty: 30 },
-            { q: "Did you give the doggo his pill?", penalty: 45 },
-            { q: "Did you eat a proper meal today?", penalty: 25 },
-            { q: "Did you drink enough water today?", penalty: 20 },
-            { q: "Did you go outside for fresh air?", penalty: 20 },
-            { q: "Were you on time meeting your friends?", penalty: 35 },
-            { q: "Did you stretch or exercise today?", penalty: 25 },
-            { q: "Did you remember to call your family?", penalty: 30 },
-            { q: "Were you on time at doggo school?", penalty: 40 },
-            { q: "Did you tidy up after cooking?", penalty: 30 },
-            { q: "Did you avoid doom-scrolling today?", penalty: 20 },
-            { q: "Did you go to bed on time last night?", penalty: 35 },
-            { q: "Did you prepare Louis's food on time?", penalty: 30 }
+            { q: "Were you punctual at school today?", penalty: 20 },
+            { q: "How clean is your kitchen right now? Be honest!", penalty: 15 },
+            { q: "How clean is your bathroom? Spotless?", penalty: 15 },
+            { q: "How clean is your bedroom? Really?", penalty: 10 },
+            { q: "How clean is the living room?", penalty: 10 },
+            { q: "Did you do something for the master thesis today?", penalty: 10 },
+            { q: "Did you give the doggo his pill?", penalty: 10 },
+            { q: "Did you eat a proper meal today?", penalty: 10 },
+            { q: "Did you drink enough water today?", penalty: 5 },
+            { q: "Did you go outside for fresh air?", penalty: 15 },
+            { q: "Were you on time meeting your friends?", penalty: 15 },
+            { q: "Did you stretch or exercise today?", penalty: 3 },
+            { q: "Did you remember to call your family?", penalty: 15 },
+            { q: "Were you on time at doggo school?", penalty: 10 },
+            { q: "Did you tidy up after cooking?", penalty: 10 },
+            { q: "Did you avoid doom-scrolling today?", penalty: 5 },
+            { q: "Did you go to bed on time last night?", penalty: 20 },
+            { q: "Did you prepare Louis's food on time?", penalty: 15 }
         ];
 
         const quests = [
@@ -821,32 +1529,45 @@
             { t: "Morning Routine ☀️", d: "Up, fresh & ready on time!", r: 35 },
             { t: "Punctual at School 🎓", d: "On time, every time.", r: 45 },
             { t: "Punctual at Doggo School 🐶", d: "Louis appreciates punctuality.", r: 45 },
-            { t: "Punctual with Friends 👯", d: "Never keep them waiting!", r: 40 }
+            { t: "Punctual with Friends 👯", d: "Never keep them waiting!", r: 40 },
+            { t: "Give doggo his pill 💊", d: "Health is wealth!", r: 40 },
+            { t: "Sleep on time 😴", d: "Beauty sleep is important.", r: 50 },
+            { t: "Rest & Recover 🧘‍♀️", d: "Take a break, recharge your energy.", r: 40 },
+            { t: "Plan Your Day 📅", d: "Set daily goals for bonus motivation.", r: 45 }
         ];
 
         const shop = [
-            { t: "Infinite Cuddles 🐨", d: "Best used with a blanket.", p: 100 },
-            { t: "Pancake Breakfast 🥞", d: "A chef's kiss morning.", p: 250 },
-            { t: "Origami Earrings 🛍️", d: "The ones you've been eyeing.", p: 800 },
-            { t: "Full Spa Evening 🧸", d: "The ultimate relaxation.", p: 1200 },
-            { t: "Ballet Date 🩰", d: "Grace and magic night.", p: 2000 }
+            { t: "Infinite Cuddles 🐨", d: "Best used with a blanket.", p: 50 },
+            { t: "Pancake Breakfast 🥞", d: "A chef's kiss morning.", p: 70 },
+            { t: "Origami Earrings 🦢", d: "Hand-folded elegance.", p: 300 },
+            { t: "Diamond Earrings 💎", d: "Sparkle like a star.", p: 1500 },
+            { t: "Full Spa Evening 🧸", d: "The ultimate relaxation.", p: 500 },
+            { t: "Ballet Date 🩰", d: "Grace and magic night.", p: 600 },
+            { t: "Relaxing Massage 💆‍♀️", d: "Melt the stress away.", p: 600 },
+            { t: "McDonald's Treat 🍔", d: "Tasty cheat meal!", p: 150 },
+            { t: "Ice Cream Night 🍦", d: "Sweet dreams guaranteed.", p: 100 },
+            { t: "Fresh Flowers 💐", d: "Beauty for your room.", p: 150 },
+            { t: "Romantic Surprise 🎁", d: "Something special just for you.", p: 800 },
+            { t: "Full Weekend Fun 🏕️", d: "A mini-vacation escape.", p: 2500 },
+            { t: "Dream Holiday ✈️", d: "The ultimate adventure.", p: 5000 }
         ];
 
         // ============ THREE.JS 3D SCENE ============
         let scene3d, cam3d, ren3d, dogGrp, pathCurve, clock3d;
-        let world;   
+        let world;
         let ambientLight, sunLight, fillLight;
+        let sunMesh, moonMesh, starGrp; // Celestial bodies
         let pathTubeMesh; // Global reference for path coloring
         let locLabels3d = [], targetDogT = 0, currentDogT = 0, sceneReady = false;
         let clickableObjects = [];
         let cloudsArr = [], boatsArr = [], fishArr = [];
         const raycaster = new THREE.Raycaster();
-        
+
         // Camera controls
         // More top-down initial view; increase phi to move camera a bit lower
-        let camCtrl = { r: 42, th: 0.7, ph: 1.40 }; // radius, theta, phi
+        let camCtrl = { r: 46, th: 0.0, ph: 1.40 }; // radius, theta, phi
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
-        let isDragging = false, lastMouse = { x:0, y:0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
+        let isDragging = false, lastMouse = { x: 0, y: 0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
         const locData = [
             { icon: '\uD83C\uDFE0', name: 'Home Base', t: 0 },
@@ -871,10 +1592,45 @@
         // Global water level (matches water plane y in mkHill)
         const WATER_LEVEL = 0.25 + TERRAIN_VERTICAL_OFFSET;
 
+        function mkCelestialBodies() {
+            // Sun
+            const sunGeo = new THREE.SphereGeometry(6, 16, 16);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+            sunMesh = new THREE.Mesh(sunGeo, sunMat);
+            sunMesh.position.set(20, 50, -20);
+            world.add(sunMesh);
+
+            // Moon
+            const moonGeo = new THREE.SphereGeometry(4, 16, 16);
+            const moonMat = new THREE.MeshLambertMaterial({ color: 0xdddddd, emissive: 0x222222 });
+            moonMesh = new THREE.Mesh(moonGeo, moonMat);
+            moonMesh.position.set(-20, 50, 20);
+            world.add(moonMesh);
+
+            // Stars
+            starGrp = new THREE.Group();
+            const starGeo = new THREE.SphereGeometry(0.3, 4, 4);
+            const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            for (let i = 0; i < 250; i++) {
+                const s = new THREE.Mesh(starGeo, starMat);
+                // Random sphere distribution
+                const r = 90 + Math.random() * 20;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI; // Full sphere
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = Math.abs(r * Math.cos(phi)); // Upper hemisphere mostly
+                const z = r * Math.sin(phi) * Math.sin(theta);
+
+                s.position.set(x, y + 10, z);
+                starGrp.add(s);
+            }
+            world.add(starGrp);
+        }
+
         function hillH(x, z) {
             // Mountain shape: combine a sharp central peak with a broad, low base
             // so the top remains cone-like while the lower slopes flatten out.
-            const r2 = x*x + z*z;
+            const r2 = x * x + z * z;
             // sharp peak (small spread) + broad base (large spread)
             const peak = 10 * Math.exp(-r2 / 80);    // central cone-like peak
             const base = 10 * Math.exp(-r2 / 100);   // broad, low base to flatten lower slopes
@@ -889,12 +1645,12 @@
             const vp = document.getElementById('viewport');
             // Allow flex layout to control size, but ensure we fill it
             vp.style.width = '100%';
-            vp.style.height = '100%'; 
-            
+            vp.style.height = '100%';
+
             // Get actual dimensions
-            const W = vp.clientWidth || 800; 
+            const W = vp.clientWidth || 800;
             const H = vp.clientHeight || 600;
-            
+
             scene3d = new THREE.Scene();
 
             world = new THREE.Group();
@@ -903,20 +1659,23 @@
 
             // Add a soft sky blue background
             scene3d.background = new THREE.Color(0xbfdfff);
-            
+
             cam3d = new THREE.PerspectiveCamera(47, W / H, 0.1, 200);
-            
+
             // Camera position: look at center of terrain from a distance
             // Find terrain center and set camera
             mkHill();
             const terrainMesh = world.getObjectByName("ground_mesh");
-            let center = new THREE.Vector3(0,0,0);
-            let size = new THREE.Vector3(0,0,0);
+            let center = new THREE.Vector3(0, 0, 0);
+            let size = new THREE.Vector3(0, 0, 0);
             if (terrainMesh) {
                 const box = new THREE.Box3().setFromObject(terrainMesh);
                 center = box.getCenter(new THREE.Vector3());
                 size = box.getSize(new THREE.Vector3());
             }
+
+            world.position.x += 10;
+
             // Place camera so full terrain is visible and centralized, rotated 45 degrees around center
             const camDistance = Math.max(size.x, size.z) * 1.1 + 30;
             const angle = Math.PI / 4; // 45 degrees in radians
@@ -925,19 +1684,7 @@
             cam3d.position.set(camX, center.y + size.y * 1.2 + 20, camZ);
             cam3d.lookAt(center.x, center.y, center.z);
 
-            // After dog is created, rotate camera to place dog in middle
-            setTimeout(() => {
-                if (dogGrp && pathCurve) {
-                    const dogPos = pathCurve.getPointAt(0); // Dog at t=0
-                    cam3d.position.set(dogPos.x, dogPos.y + size.y * 1.2 + 20, dogPos.z + camDistance);
-                    cam3d.lookAt(dogPos.x, dogPos.y, dogPos.z);
-                    // Rotate dog to face camera
-                    const camDir = new THREE.Vector3().subVectors(cam3d.position, dogPos).normalize();
-                    dogGrp.rotation.y = Math.atan2(camDir.x, camDir.z);
-                }
-            }, 100);
-           
-            world.position.x += 10;
+            // (Removed setTimeout that overrides initial camera rotation)
 
             ren3d = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             ren3d.setClearColor(0x000000, 0); // transparent
@@ -959,18 +1706,18 @@
             world.add(sunLight);
             fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
             fillLight.position.set(-5, 3, -5); world.add(fillLight);
-            mkHill(); mkPath(); mkDog(); mkLocs(); mkTrees(); mkClouds(); mkBoats(); mkFish();
+            mkHill(); mkPath(); mkDog(); mkLocs(); mkTrees(); mkClouds(); mkFlowers(); mkBoats(); mkFish(); mkCelestialBodies();
             clock3d = new THREE.Clock(); sceneReady = true;
             window.addEventListener('resize', () => {
                 const w = vp.clientWidth, h = vp.clientHeight;
                 cam3d.aspect = w / h; cam3d.updateProjectionMatrix(); ren3d.setSize(w, h);
             });
-            
+
             // Mouse / Touch controls
             const canvas = ren3d.domElement;
-            const onDown = (x, y, btn) => { 
-                isDragging = true; 
-                lastMouse = { x, y }; 
+            const onDown = (x, y, btn) => {
+                isDragging = true;
+                lastMouse = { x, y };
                 // Button 1 (middle) or Shift+Left for pan
                 dragMode = (btn === 1) ? 'pan' : 'rotate';
             };
@@ -978,12 +1725,12 @@
                 if (!isDragging) return;
                 const dx = (x - lastMouse.x);
                 const dy = (y - lastMouse.y);
-                
+
                 if (dragMode === 'rotate') {
                     // Adjust theta/phi OFFSET relative to the automatic dog tracking
                     // We modify camCtrl.th (which is now acting as an offset to dogAngle)
-                    camCtrl.th -= dx * 0.005; 
-                    camCtrl.ph = Math.max(0.1, Math.min(Math.PI/2 - 0.1, camCtrl.ph - dy * 0.005)); 
+                    camCtrl.th -= dx * 0.005;
+                    camCtrl.ph = Math.max(0.1, Math.min(Math.PI / 2 - 0.1, camCtrl.ph - dy * 0.005));
                 } else if (dragMode === 'pan') {
                     // Pan relative to camera view
                     const sensitivity = camCtrl.r * 0.002;
@@ -991,21 +1738,21 @@
                     // Simplified: Move Right/Left relative to camera
                     const vRight = new THREE.Vector3(1, 0, 0).applyQuaternion(cam3d.quaternion);
                     const vUp = new THREE.Vector3(0, 1, 0).applyQuaternion(cam3d.quaternion);
-                    
+
                     const dV = vRight.multiplyScalar(-dx * sensitivity).add(vUp.multiplyScalar(dy * sensitivity));
-                    
+
                     camOffset.add(dV);
-                    
+
                     // Limits
                     camOffset.x = Math.max(-20, Math.min(20, camOffset.x));
                     camOffset.y = Math.max(-10, Math.min(20, camOffset.y));
                     camOffset.z = Math.max(-20, Math.min(20, camOffset.z));
                 }
-                
+
                 lastMouse = { x, y };
             };
             const onUp = () => { isDragging = false; };
-            
+
             canvas.addEventListener('mousedown', e => onDown(e.clientX, e.clientY, e.button));
             window.addEventListener('mousemove', e => onMove(e.clientX, e.clientY));
             window.addEventListener('mouseup', onUp);
@@ -1018,7 +1765,7 @@
                 const intersects = raycaster.intersectObjects(clickableObjects, true);
                 if (intersects.length > 0) {
                     let target = intersects[0].object;
-                    while(target && (!target.userData || !target.userData.isLoc)) {
+                    while (target && (!target.userData || !target.userData.isLoc)) {
                         target = target.parent;
                     }
                     if (target && target.userData && target.userData.loc) {
@@ -1026,44 +1773,44 @@
                     }
                 }
             });
-            
+
             // Enhanced Touch Support (One finger rotate, two fingers pan)
             const getTouchCenter = (touches) => {
-                if(touches.length === 2) {
-                    return { x: (touches[0].clientX + touches[1].clientX)/2, y: (touches[0].clientY + touches[1].clientY)/2 };
+                if (touches.length === 2) {
+                    return { x: (touches[0].clientX + touches[1].clientX) / 2, y: (touches[0].clientY + touches[1].clientY) / 2 };
                 }
                 return { x: touches[0].clientX, y: touches[0].clientY };
             };
 
-            canvas.addEventListener('touchstart', e => { 
+            canvas.addEventListener('touchstart', e => {
                 e.preventDefault();
-                if(e.touches.length === 1) {
+                if (e.touches.length === 1) {
                     onDown(e.touches[0].clientX, e.touches[0].clientY, 0); // 0 = rotate
                 } else if (e.touches.length === 2) {
                     const c = getTouchCenter(e.touches);
                     onDown(c.x, c.y, 1); // 1 = pan
                 }
-            }, {passive:false});
-            
-            window.addEventListener('touchmove', e => { 
-                if(!isDragging) return;
+            }, { passive: false });
+
+            window.addEventListener('touchmove', e => {
+                if (!isDragging) return;
                 e.preventDefault();
-                
-                if(e.touches.length === 1 && dragMode === 'rotate') {
+
+                if (e.touches.length === 1 && dragMode === 'rotate') {
                     onMove(e.touches[0].clientX, e.touches[0].clientY);
-                } else if(e.touches.length === 2 && dragMode === 'pan') {
+                } else if (e.touches.length === 2 && dragMode === 'pan') {
                     const c = getTouchCenter(e.touches);
                     onMove(c.x, c.y);
                 }
-            }, {passive:false});
-            
+            }, { passive: false });
+
             window.addEventListener('touchend', onUp);
             canvas.addEventListener('wheel', e => {
                 e.preventDefault();
                 // Allow much larger zoom-out range (increase upper limit)
                 camCtrl.r = Math.max(5, Math.min(200, camCtrl.r + e.deltaY * 0.01));
-            }, {passive:false});
-            
+            }, { passive: false });
+
             // Re-frame button
             const btn = document.createElement('div');
             btn.innerHTML = '🎯';
@@ -1071,7 +1818,7 @@
             btn.title = "Re-frame on Dog";
             btn.onclick = () => {
                 camOffset.set(0, 0, 0);
-                camCtrl = { r: 25, th: 0.5, ph: 1.25 };
+                camCtrl = { r: 25, th: 0.0, ph: 1.25 };
             };
             vp.appendChild(btn);
 
@@ -1082,7 +1829,7 @@
         function updateSkyByTime() {
             if (!scene3d || !ambientLight || !sunLight || !fillLight) return;
             const now = new Date();
-            const h = now.getHours() + now.getMinutes()/60;
+            const h = now.getHours() + now.getMinutes() / 60;
 
             // Dawn/Dusk smoothing windows
             const dawnStart = 5, dawnEnd = 8;
@@ -1120,6 +1867,46 @@
             ambientLight.color.setHex(0xffffff);
             sunLight.color.setHex(0xffffff);
             fillLight.color.setHex(0xffffff);
+
+            // Celestial Visibility
+            if (sunMesh) sunMesh.visible = (t > 0.1);
+            if (moonMesh) moonMesh.visible = (t <= 0.15);
+            if (starGrp) starGrp.visible = (t <= 0.15);
+        }
+
+        function mkCelestialBodies() {
+            // Sun
+            const sunGeo = new THREE.SphereGeometry(6, 16, 16);
+            const sunMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+            sunMesh = new THREE.Mesh(sunGeo, sunMat);
+            sunMesh.position.set(20, 50, -20);
+            world.add(sunMesh);
+
+            // Moon
+            const moonGeo = new THREE.SphereGeometry(4, 16, 16);
+            const moonMat = new THREE.MeshLambertMaterial({ color: 0xdddddd, emissive: 0x222222 });
+            moonMesh = new THREE.Mesh(moonGeo, moonMat);
+            moonMesh.position.set(-20, 50, 20);
+            world.add(moonMesh);
+
+            // Stars
+            starGrp = new THREE.Group();
+            const starGeo = new THREE.SphereGeometry(0.3, 4, 4);
+            const starMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            for (let i = 0; i < 250; i++) {
+                const s = new THREE.Mesh(starGeo, starMat);
+                // Random sphere distribution
+                const r = 90 + Math.random() * 20;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI; // Full sphere
+                const x = r * Math.sin(phi) * Math.cos(theta);
+                const y = Math.abs(r * Math.cos(phi)); // Upper hemisphere mostly
+                const z = r * Math.sin(phi) * Math.sin(theta);
+
+                s.position.set(x, y + 10, z);
+                starGrp.add(s);
+            }
+            world.add(starGrp);
         }
 
         function mkHill() {
@@ -1133,9 +1920,9 @@
 
             for (let i = 0; i < posAttribute.count; i++) {
                 vertex.fromBufferAttribute(posAttribute, i);
-                
-                const dist = Math.sqrt(vertex.x*vertex.x + vertex.z*vertex.z);
-                
+
+                const dist = Math.sqrt(vertex.x * vertex.x + vertex.z * vertex.z);
+
                 // Construct a rounded island logic:
                 // If the vertex is far from center, drop it down underwater to hide square plane corners
                 // Use a smaller base radius so the island footprint is tighter: outer cutoff ~28, taper between 26..28
@@ -1144,7 +1931,7 @@
                 } else {
                     // Apply height function
                     let h = hillH(vertex.x, vertex.z);
-                    
+
                     // Smooth taper at the edge to ensure no jagged drops
                     if (dist > 26) {
                         // Blend from h to slightly negative between r=26 and r=28
@@ -1153,25 +1940,25 @@
                     }
                     vertex.y = h;
                 }
-                
+
                 // Update the attribute
                 posAttribute.setY(i, vertex.y);
             }
-            
+
             // Remove faces that are entirely underwater to create a round island shape
             const oldIndices = geo.index.array;
             const newIndices = [];
             const waterLevel = WATER_LEVEL; // Use global water level so trimming matches actual water plane
-            
+
             for (let i = 0; i < oldIndices.length; i += 3) {
                 const a = oldIndices[i];
-                const b = oldIndices[i+1];
-                const c = oldIndices[i+2];
-                
+                const b = oldIndices[i + 1];
+                const c = oldIndices[i + 2];
+
                 const ya = posAttribute.getY(a);
                 const yb = posAttribute.getY(b);
                 const yc = posAttribute.getY(c);
-                
+
                 // Keep the face if at least one vertex is above (or near) the water level
                 // We use a small epsilon -0.1 to allow faces that are just crossing the surface
                 if (ya >= waterLevel - 0.01 || yb >= waterLevel - 0.01 || yc >= waterLevel - 0.01) {
@@ -1179,33 +1966,36 @@
                 }
             }
             geo.setIndex(newIndices);
-            
+
             geo.computeVertexNormals(); // Recalculate normals for lighting
 
-            const mat = new THREE.MeshLambertMaterial({ 
+            const mat = new THREE.MeshLambertMaterial({
                 color: 0x5cb338,
                 side: THREE.DoubleSide
             });
             const mesh = new THREE.Mesh(geo, mat);
-            mesh.receiveShadow = true; 
+            mesh.receiveShadow = true;
             mesh.name = "ground_mesh";
             mesh.position.z = 10; // Move terrain closer to camera (was -10)
             world.add(mesh);
-            
+
             // Optional: Add a water plane at y=0 or slightly below
+            // Add a water plane at the correct y level, always below terrain and never in the sky
             const waterGeo = new THREE.CircleGeometry(52, 128);
             waterGeo.rotateX(-Math.PI / 2);
-            const waterMat = new THREE.MeshPhongMaterial({ 
-                color: 0x0066cc, 
-                transparent: true, 
+            const waterMat = new THREE.MeshPhongMaterial({
+                color: 0x0066cc,
+                transparent: true,
                 opacity: 0.9,
                 shininess: 80
             });
             const water = new THREE.Mesh(waterGeo, waterMat);
-            // Use global WATER_LEVEL so water always matches terrain offset
-            water.position.y = WATER_LEVEL;
+            // Clamp water Y to always be below terrain and camera
+            water.position.y = Math.min(WATER_LEVEL, 2.5); // never above y=2.5 (sky)
             water.position.z = 10; // Move water closer to camera (was -10)
+            water.name = "sea_mesh";
             world.add(water);
+            // ...existing code...
         }
 
         function mkPath() {
@@ -1214,27 +2004,27 @@
             const turns = 3.5; // Number of times to wrap around
             const startRadius = 14;
             const endRadius = 1;
-            
+
             const pts = [];
-            for(let i=0; i<numPoints; i++) {
+            for (let i = 0; i < numPoints; i++) {
                 const t = i / (numPoints - 1);
                 // Radius gets smaller as we go up
                 const r = startRadius * (1 - t) + endRadius * t;
                 // Angle spirals around
-                const angle = t * Math.PI * 2 * turns; 
-                
+                const angle = t * Math.PI * 2 * turns;
+
                 const x = Math.cos(angle) * r;
                 const z = Math.sin(angle) * r + 10; // Move path closer to camera (was -10)
-                
+
                 // Get terrain height
                 const y = hillH(x, z - 10); // hillH expects original z (undo new offset)
-                
+
                 // Offset slightly above terrain
                 pts.push(new THREE.Vector3(x, y + 0.2, z));
             }
-            
+
             pathCurve = new THREE.CatmullRomCurve3(pts);
-            
+
             // Draw the path using TubeGeometry with Vertex Colors
             const geo = new THREE.TubeGeometry(pathCurve, 200, 0.4, 8, false);
             const colors = [];
@@ -1248,13 +2038,13 @@
                 geo,
                 new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xffffff, side: THREE.DoubleSide })
             );
-            pathTubeMesh.receiveShadow = true; 
+            pathTubeMesh.receiveShadow = true;
             world.add(pathTubeMesh);
 
             // Cap the ends so it doesn't look hollow
             const startPt = pathCurve.getPointAt(0);
             const endPt = pathCurve.getPointAt(1);
-            
+
             const startCap = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 16), new THREE.MeshLambertMaterial({ color: 0xc29e70 }));
             startCap.position.copy(startPt);
             startCap.name = "path_start_cap";
@@ -1293,7 +2083,7 @@
             });
             dogGrp.legs = [];
             [[-1, wht, 0.3, 0.18], [1, wht, 0.3, -0.18],
-             [1, blk, -0.3, 0.18], [-1, blk, -0.3, -0.18]].forEach(([pair, mat, x, z]) => {
+            [1, blk, -0.3, 0.18], [-1, blk, -0.3, -0.18]].forEach(([pair, mat, x, z]) => {
                 const leg = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.35, 0.1), mat);
                 leg.position.set(x, 0.18, z); leg.castShadow = true;
                 dogGrp.add(leg); dogGrp.legs.push({ mesh: leg, pair: pair });
@@ -1308,7 +2098,7 @@
             world.add(dogGrp);
             // Place the dog on the path at t=0 (start)
             // Use getPointAt (ArcLength) to match TubeGeometry texture coordinates
-            const dogStart = pathCurve.getPointAt(0); 
+            const dogStart = pathCurve.getPointAt(0);
             dogGrp.position.copy(dogStart);
             dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
         }
@@ -1316,40 +2106,40 @@
         function mkLocObject(name) {
             const grp = new THREE.Group();
             const mCol = (c) => new THREE.MeshLambertMaterial({ color: c });
-            
+
             if (name === 'Home Base') {
                 const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.6, 0.8), mCol(0xeeeeee));
                 base.position.y = 0.3; base.castShadow = true; grp.add(base);
                 const roof = new THREE.Mesh(new THREE.ConeGeometry(0.7, 0.5, 4), mCol(0xff4444));
-                roof.position.y = 0.85; roof.rotation.y = Math.PI/4; roof.castShadow = true; grp.add(roof);
+                roof.position.y = 0.85; roof.rotation.y = Math.PI / 4; roof.castShadow = true; grp.add(roof);
                 const door = new THREE.Mesh(new THREE.PlaneGeometry(0.3, 0.4), mCol(0x654321));
                 door.position.set(0, 0.3, 0.41); grp.add(door);
             } else if (name === 'Choco Hill') {
-                 const bar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.5), mCol(0x5D4037));
-                 bar.position.y = 0.15; bar.castShadow = true; grp.add(bar);
-                 for(let i=-1; i<=1; i+=2) {
-                     for(let j=-1; j<=1; j+=2) {
-                         const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.2), mCol(0x4E342E));
-                         b.position.set(i*0.2, 0.25, j*0.12); b.castShadow = true; grp.add(b);
-                     }
-                 }
+                const bar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.2, 0.5), mCol(0x5D4037));
+                bar.position.y = 0.15; bar.castShadow = true; grp.add(bar);
+                for (let i = -1; i <= 1; i += 2) {
+                    for (let j = -1; j <= 1; j += 2) {
+                        const b = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.1, 0.2), mCol(0x4E342E));
+                        b.position.set(i * 0.2, 0.25, j * 0.12); b.castShadow = true; grp.add(b);
+                    }
+                }
             } else if (name === 'Puppy Park') {
                 const boneMat = mCol(0xffffff);
                 const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.6, 8), boneMat);
-                shaft.rotation.z = Math.PI/2; shaft.position.y = 0.2; shaft.castShadow = true; grp.add(shaft);
+                shaft.rotation.z = Math.PI / 2; shaft.position.y = 0.2; shaft.castShadow = true; grp.add(shaft);
                 [-0.3, 0.3].forEach(x => {
                     [-0.1, 0.1].forEach(z => {
-                         const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), boneMat);
-                         ball.position.set(x, 0.2, z); ball.castShadow = true; grp.add(ball);
+                        const ball = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), boneMat);
+                        ball.position.set(x, 0.2, z); ball.castShadow = true; grp.add(ball);
                     });
                 });
             } else if (name === 'Bubble Tea') {
                 const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.5, 12), mCol(0xFFCCBC));
-                cup.position.y = 0.25; cup.castShadow = true; grp.add(cup);
-                const lid = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 8, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFFFFF)); 
-                lid.position.y = 0.5; lid.castShadow = true; grp.add(lid);
+                cup.position.y = 0.1; cup.castShadow = true; grp.add(cup); // Lowered
+                const lid = new THREE.Mesh(new THREE.SphereGeometry(0.21, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), mCol(0xFFFFFF));
+                lid.position.y = 0.35; lid.castShadow = true; grp.add(lid); // Lowered
                 const straw = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.7, 8), mCol(0x333333));
-                straw.position.set(0.05, 0.5, 0); straw.rotation.z = -0.2; straw.castShadow = true; grp.add(straw);
+                straw.position.set(0.05, 0.35, 0); straw.rotation.z = -0.2; straw.castShadow = true; grp.add(straw); // Lowered
             } else if (name === 'Shopping City') {
                 const bag = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.3), mCol(0xFFA726));
                 bag.position.y = 0.25; bag.castShadow = true; grp.add(bag);
@@ -1357,47 +2147,47 @@
                 handle.position.set(0, 0.5, 0); grp.add(handle);
             } else if (name === 'Sushi Palace') {
                 const rice = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.25, 12), mCol(0xffffff));
-                rice.rotation.x = Math.PI/2; rice.position.y = 0.3; rice.castShadow = true; grp.add(rice);
+                rice.rotation.x = Math.PI / 2; rice.position.y = 0.3; rice.castShadow = true; grp.add(rice);
                 const nori = new THREE.Mesh(new THREE.CylinderGeometry(0.31, 0.31, 0.15, 12, 1, true), new THREE.MeshLambertMaterial({ color: 0x1a1a1a, side: THREE.DoubleSide }));
-                nori.rotation.x = Math.PI/2; nori.position.y = 0.3; grp.add(nori);
+                nori.rotation.x = Math.PI / 2; nori.position.y = 0.3; grp.add(nori);
                 const fill = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.26, 8), mCol(0xFF5722));
-                fill.rotation.x = Math.PI/2; fill.position.y = 0.3; grp.add(fill);
+                fill.rotation.x = Math.PI / 2; fill.position.y = 0.3; grp.add(fill);
             } else if (name === 'Spa Island') {
                 [0.35, 0.25, 0.15].forEach((r, i) => {
-                     const st = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), mCol(0x9E9E9E));
-                     st.scale.y = 0.6;
-                     st.position.y = (i===0 ? 0.1 : (i===1 ? 0.35 : 0.55));
-                     st.castShadow = true;
-                     grp.add(st);
+                    const st = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8), mCol(0x9E9E9E));
+                    st.scale.y = 0.6;
+                    st.position.y = (i === 0 ? 0.1 : (i === 1 ? 0.35 : 0.55));
+                    st.castShadow = true;
+                    grp.add(st);
                 });
             } else if (name === 'Opera House') {
-                 // Steps
-                 const step1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.8), mCol(0xEEEEEE));
-                 step1.position.y = 0.05; grp.add(step1);
-                 const step2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.6), mCol(0xEEEEEE));
-                 step2.position.y = 0.15; grp.add(step2);
-                 // Main Building
-                 const build = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.4), mCol(0xF5F5F5));
-                 build.position.y = 0.45; grp.add(build);
-                 // Pillars
-                 [-0.3, -0.1, 0.1, 0.3].forEach(x => {
-                     const p = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), mCol(0xDDDDDD));
-                     p.position.set(x, 0.45, 0.22); grp.add(p);
-                 });
-                 // Gold Dome
-                 const dome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFD700)); // Gold
-                 dome.position.y = 0.7; grp.add(dome);
+                // Steps
+                const step1 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.1, 0.8), mCol(0xEEEEEE));
+                step1.position.y = 0.05; grp.add(step1);
+                const step2 = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.1, 0.6), mCol(0xEEEEEE));
+                step2.position.y = 0.15; grp.add(step2);
+                // Main Building
+                const build = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.4), mCol(0xF5F5F5));
+                build.position.y = 0.45; grp.add(build);
+                // Pillars
+                [-0.3, -0.1, 0.1, 0.3].forEach(x => {
+                    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.5, 8), mCol(0xDDDDDD));
+                    p.position.set(x, 0.45, 0.22); grp.add(p);
+                });
+                // Gold Dome
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), mCol(0xFFD700)); // Gold
+                dome.position.y = 0.7; grp.add(dome);
             } else if (name === 'Bakery') {
                 // Cupcake Building (Smaller & Cute)
-                const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.4, 16), mCol(0xFFC0CB)); 
+                const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.3, 0.4, 16), mCol(0xFFC0CB));
                 cup.position.y = 0.2; cup.castShadow = true; grp.add(cup);
                 // Frosting Dome
-                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0xFFFFFF)); 
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.38, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), mCol(0xFFFFFF));
                 dome.position.y = 0.4; grp.add(dome);
                 // Sprinkles
                 [0xFF0000, 0x00FF00, 0x0000FF, 0xFFFF00].forEach((c, i) => {
                     const s = new THREE.Mesh(new THREE.CapsuleGeometry(0.025, 0.05, 4, 4), mCol(c));
-                    s.position.set(Math.sin(i*2)*0.2, 0.65 + Math.cos(i)*0.03, Math.cos(i*2)*0.2);
+                    s.position.set(Math.sin(i * 2) * 0.2, 0.65 + Math.cos(i) * 0.03, Math.cos(i * 2) * 0.2);
                     s.rotation.set(Math.random(), Math.random(), Math.random());
                     grp.add(s);
                 });
@@ -1408,17 +2198,17 @@
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 0.7, 8), mCol(0x8B4513));
                 trunk.position.y = 0.35; trunk.castShadow = true; grp.add(trunk);
                 // Round canopy (Deciduous)
-                const leavesMat = mCol(0x4CAF50); 
+                const leavesMat = mCol(0x4CAF50);
                 const l1 = new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 0), leavesMat);
                 l1.position.y = 0.8; grp.add(l1);
                 [0, 2, 4].forEach(i => {
                     const l = new THREE.Mesh(new THREE.IcosahedronGeometry(0.3, 0), leavesMat);
-                    l.position.set(Math.sin(i)*0.3, 0.7, Math.cos(i)*0.3);
+                    l.position.set(Math.sin(i) * 0.3, 0.7, Math.cos(i) * 0.3);
                     grp.add(l);
                 });
-                
+
                 // Koala
-                const kBody = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mCol(0x9E9E9E)); 
+                const kBody = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), mCol(0x9E9E9E));
                 kBody.position.set(0, 0.5, 0.16); grp.add(kBody); // Sitting on trunk
                 const kHead = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), mCol(0x9E9E9E));
                 kHead.position.set(0, 0.62, 0.19); grp.add(kHead);
@@ -1437,7 +2227,7 @@
                 const screen = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.1), mCol(0x000000));
                 screen.position.set(0, 0.4, -0.2); grp.add(screen);
                 const proj = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.4, 16), mCol(0x333333));
-                proj.rotation.x = Math.PI/2; proj.position.set(0, 0.4, 0.4); grp.add(proj);
+                proj.rotation.x = Math.PI / 2; proj.position.set(0, 0.4, 0.4); grp.add(proj);
             } else if (name === 'Greek Taverna') {
                 const floor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.1, 0.8), mCol(0xDDDDDD));
                 floor.position.y = 0.05; grp.add(floor);
@@ -1447,20 +2237,20 @@
                         col.position.set(x, 0.35, z); grp.add(col);
                     });
                 });
-                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI*2, 0, Math.PI/2), mCol(0x0099FF)); 
+                const dome = new THREE.Mesh(new THREE.SphereGeometry(0.35, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2), mCol(0x0099FF));
                 dome.position.y = 0.65; grp.add(dome);
             } else if (name === 'Beaver Lodge') {
                 // Two wood pieces (logs)
                 const logGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.7, 8);
                 const woodMat = mCol(0x5D4037);
-                
+
                 const log1 = new THREE.Mesh(logGeo, woodMat);
                 log1.rotation.z = Math.PI / 2; // Lay flat
                 log1.rotation.y = Math.PI / 8; // Slight angle
                 log1.position.y = 0.12;
                 log1.castShadow = true;
                 grp.add(log1);
-                
+
                 const log2 = new THREE.Mesh(logGeo, woodMat);
                 log2.rotation.z = Math.PI / 2;
                 log2.rotation.y = -Math.PI / 4; // Cross it
@@ -1476,37 +2266,37 @@
                 pBelly.position.set(0.22, 0.2, 0.22); grp.add(pBelly);
             }
             else {
-                const box = new THREE.Mesh(new THREE.BoxGeometry(0.5,0.5,0.5), mCol(0x888888));
-                box.position.y=0.25; grp.add(box);
+                const box = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.5), mCol(0x888888));
+                box.position.y = 0.25; grp.add(box);
             }
             return grp;
         }
 
         function toggleLocMenu() {
             const m = document.getElementById('loc-list-hud');
-            if(m) m.classList.toggle('show');
+            if (m) m.classList.toggle('show');
         }
 
         function updateLocMenu() {
             const hud = document.getElementById('loc-list-hud');
-            if(!hud) return;
-            
+            if (!hud) return;
+
             // Clear existing items (keep title if we want, or just rebuild all)
             hud.innerHTML = '<div class="loc-list-title">Destinations</div>';
-            
+
             locData.forEach(loc => {
                 const feat = locFeatures[loc.name];
                 const unlocked = feat ? (coins >= feat.unlockCoins || total >= feat.unlockCoins) : true;
-                
+
                 const item = document.createElement('div');
                 item.className = 'loc-list-item ' + (unlocked ? 'unlocked' : 'locked');
                 item.onclick = () => {
                     showLocDetail(loc);
-                    if(window.innerWidth < 600) toggleLocMenu(); // Auto-close on mobile
+                    if (window.innerWidth < 600) toggleLocMenu(); // Auto-close on mobile
                 };
-                
+
                 let html = `<span>${loc.icon}</span> ${loc.name}`;
-                if(!unlocked) {
+                if (!unlocked) {
                     html += `<div class="lock-icon">🔒</div>`;
                 }
                 item.innerHTML = html;
@@ -1516,9 +2306,9 @@
 
         function mkLocs() {
             const vp = document.getElementById('viewport');
-            
+
             // 1. Create Menu Button
-            if(!document.getElementById('loc-menu-btn')) {
+            if (!document.getElementById('loc-menu-btn')) {
                 const btn = document.createElement('div');
                 btn.id = 'loc-menu-btn';
                 btn.className = 'loc-menu-btn';
@@ -1528,7 +2318,7 @@
             }
 
             // 2. Create Menu Container
-            if(!document.getElementById('loc-list-hud')) {
+            if (!document.getElementById('loc-list-hud')) {
                 const hud = document.createElement('div');
                 hud.id = 'loc-list-hud';
                 hud.className = 'loc-list-hud';
@@ -1542,33 +2332,34 @@
                 const t = idx / (locData.length - 1);
                 // Point on Path
                 const p = pathCurve.getPointAt(t);
-                
+
                 // Place on the path, but "higher" (on top of the tube)
-                const pathSurfaceY = p.y + 0.4; 
-                
+                const pathSurfaceY = p.y + 0.4;
+
                 // 3D Object
                 const obj = mkLocObject(loc.name);
                 // Scale normal - User requested BIGGER
-                obj.scale.set(1.5, 1.5, 1.5); 
+                obj.scale.set(1.5, 1.5, 1.5);
                 obj.position.set(p.x, pathSurfaceY, p.z); // Already adjusted by path z
-                
+
                 // Rotate to align with path tangent
                 const tan = pathCurve.getTangentAt(t);
                 obj.rotation.y = Math.atan2(tan.x, tan.z); // Face along path
-                
+
                 obj.userData = { loc: loc, isLoc: true };
                 world.add(obj);
                 clickableObjects.push(obj);
 
                 // If the object sits into the terrain (overlap), nudge it outward radially until it sits above ground.
                 (function ensureAboveTerrain(o) {
+                    if (o.userData.loc.name === 'Bubble Tea') return;
                     const clearance = 0.12; // desired minimum clearance above ground
                     let ox = o.position.x, oz = o.position.z + 10; // Undo z offset for terrain check
                     let groundHere = hillH(ox, oz);
                     // If base (approx) is below or too close to ground, move outward
                     if (o.position.y <= groundHere + clearance) {
                         const angle = Math.atan2(oz, ox);
-                        let radius = Math.sqrt(ox*ox + oz*oz);
+                        let radius = Math.sqrt(ox * ox + oz * oz);
                         let moved = false;
                         for (let step = 0; step < 24; step++) {
                             radius += 0.9 + Math.random() * 0.6; // push outward
@@ -1599,7 +2390,7 @@
                 lbl.innerHTML = '<span class="loc-icon-3d">' + loc.icon + '</span><span class="loc-tag-3d">' + loc.name + '</span>';
                 lbl.addEventListener('click', () => showLocDetail(loc));
                 vp.appendChild(lbl);
-                
+
                 // Store object ref for proximity check; label position will always be computed from obj position
                 locLabels3d.push({ el: lbl, loc: loc, obj: obj });
                 // Move label DOM element visually in z as well (handled in animation loop if needed)
@@ -1612,13 +2403,13 @@
             const tk = new THREE.MeshLambertMaterial({ color: 0x5A3E2A });
             const terrainMesh = scene3d.getObjectByName("ground_mesh");
             const terrainY = terrainMesh ? terrainMesh.position.y : 0;
-            
+
             const pathPts = pathCurve.getPoints(100);
             // Increase max trees and sample radius by area so trees appear more evenly across the island
             let treesPlaced = 0, attempts = 0;
             const MAX_TREES = 180;
-            
-            while(treesPlaced < MAX_TREES && attempts < 1500) {
+
+            while (treesPlaced < MAX_TREES && attempts < 1500) {
                 attempts++;
                 const angle = Math.random() * Math.PI * 2;
                 // Match tree radius to the new, smaller island base
@@ -1627,41 +2418,41 @@
                 const r = maxTreeR * Math.sqrt(Math.random());
                 const x = Math.cos(angle) * r;
                 const z = Math.sin(angle) * r;
-                
+
                 let safe = true;
-                const distSq = x*x + z*z;
+                const distSq = x * x + z * z;
                 // Avoid center top
                 if (distSq < 0.4) continue; // allow trees closer to summit than before
-                
+
                 // Avoid water / shoreline (keep trees strictly on the main island part)
                 // Keep trees within the island area to avoid shoreline: use maxTreeR
                 if (distSq > (maxTreeR * maxTreeR)) continue;
-                
+
                 // Also check height just in case — avoid planting in water
                 if (hillH(x, z) < WATER_LEVEL + 0.05) continue;
 
                 // Path collision
-                for(let p of pathPts) {
-                    // Reduce exclusion distance so trees can live closer to the path on upper slopes
-                    if ((p.x-x)**2 + (p.z-z)**2 < 1.2) { safe = false; break; }
+                for (let p of pathPts) {
+                    // Tree world z is z + 10; increasing threshold to 2.5 for safety
+                    if ((p.x - x) ** 2 + (p.z - (z + 10)) ** 2 < 2.5) { safe = false; break; }
                 }
-                if(!safe) continue;
-                
+                if (!safe) continue;
+
                 // Location collision
-                for(let l of locLabels3d) {
+                for (let l of locLabels3d) {
                     // Allow trees closer to locations but still avoid direct overlap
-                    if ((l.obj.position.x-x)**2 + (l.obj.position.z-z)**2 < 3) { safe = false; break; }
+                    if ((l.obj.position.x - x) ** 2 + (l.obj.position.z - z) ** 2 < 3) { safe = false; break; }
                 }
-                if(!safe) continue;
+                if (!safe) continue;
 
                 treesPlaced++;
                 const y = hillH(x, z) + terrainY + 0.05;
                 const th = 0.4 + Math.random() * 0.3;
                 const treeGrp = new THREE.Group();
-                
+
                 const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, th, 5), tk);
-                trunk.position.set(0, th/2, 0); trunk.castShadow = true; treeGrp.add(trunk);
-                
+                trunk.position.set(0, th / 2, 0); trunk.castShadow = true; treeGrp.add(trunk);
+
                 const layers = 2 + Math.floor(Math.random() * 2);
                 for (let l = 0; l < layers; l++) {
                     const tr = 0.45 - l * 0.1 + Math.random() * 0.08;
@@ -1676,8 +2467,8 @@
             const fc = [0xff69b4, 0xff2d55, 0xffeb3b, 0xff9800, 0xba68c8];
             for (let i = 0; i < 30; i++) {
                 const t = Math.random(), pt = pathCurve.getPoint(t);
-                const ox = (Math.random()-0.5)*2.5, oz = (Math.random()-0.5)*1.5;
-                const fx = pt.x+ox, fz = pt.z+oz;
+                const ox = (Math.random() - 0.5) * 2.5, oz = (Math.random() - 0.5) * 1.5;
+                const fx = pt.x + ox, fz = pt.z + oz;
                 // Very simple check for flowers
                 if (Math.abs(ox) < 0.3 && Math.abs(oz) < 0.3) continue; // Don't put on path center
 
@@ -1686,10 +2477,10 @@
 
                 const fy = hillH(fx, fz) + terrainY;
                 const fl = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.05+Math.random()*0.03, 6, 6),
-                    new THREE.MeshLambertMaterial({ color: fc[Math.floor(Math.random()*fc.length)] })
+                    new THREE.SphereGeometry(0.05 + Math.random() * 0.03, 6, 6),
+                    new THREE.MeshLambertMaterial({ color: fc[Math.floor(Math.random() * fc.length)] })
                 );
-                fl.position.set(fx, fy+0.05, fz + 10); world.add(fl); // Move flowers closer to camera (was -10)
+                fl.position.set(fx, fy + 0.05, fz + 10); world.add(fl); // Move flowers closer to camera (was -10)
             }
         }
 
@@ -1697,14 +2488,14 @@
             const cm = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.6 });
             // Spread clouds far apart and place them lower, more transparent
             // const cloudPositions = [[-30,16,-40],[20,15,35],[50,17,-45],[-50,16,25],[35,15,-20],[-25,17,50],[55,16,-15]];
-            const cloudPositions = [[-20,22,-20],[20,30,25],[40,45,-25],[-30,37,25],[35,42,-30],[-25,63,50],[35,31,-15]];
-            cloudPositions.forEach(([x,y,z], idx) => {
+            const cloudPositions = [[-20, 22, -20], [20, 30, 25], [40, 45, -25], [-30, 37, 25], [35, 42, -30], [-25, 63, 50], [35, 31, -15]];
+            cloudPositions.forEach(([x, y, z], idx) => {
                 const cg = new THREE.Group();
-                for (let i = 0; i < 4+Math.floor(Math.random()*3); i++) {
+                for (let i = 0; i < 4 + Math.floor(Math.random() * 3); i++) {
                     // larger cloud puffs for a puffier silhouette
                     const r = 1.0 + Math.random() * 1.6;
                     const pf = new THREE.Mesh(new THREE.SphereGeometry(r, 10, 8), cm);
-                    pf.position.set((Math.random()*2-1)*1.5, Math.random()*0.6 - 0.2, Math.random()*1.6-0.6 +4.0);
+                    pf.position.set((Math.random() * 2 - 1) * 1.5, Math.random() * 0.6 - 0.2, Math.random() * 1.6 - 0.6 + 4.0);
                     pf.castShadow = false; pf.receiveShadow = false;
                     cg.add(pf);
                 }
@@ -1716,14 +2507,72 @@
                 // No movement data needed - clouds are stationary
                 cg.userData = {};
                 cloudsArr.push(cg);
-                world.add(cg);
             });
+        }
+
+        let flowerGrp;
+        function mkFlowers() {
+            if (flowerGrp) world.remove(flowerGrp);
+            flowerGrp = new THREE.Group();
+
+            // Limit to avoid performance issues if they study for 10,000 minutes
+            const count = Math.min(totalStudyMinutes, 5000);
+
+            // InstancedMesh for performance if count is high, but standard logic for now is easier to customize colors
+            // Let's use simple geometry for performance
+            const stemGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.1, 4);
+            const petalGeo = new THREE.SphereGeometry(0.06, 4, 4);
+            const stemMat = new THREE.MeshLambertMaterial({ color: 0x4CAF50 });
+
+            const petalColors = [0xFFC0CB, 0xFF69B4, 0xFFEB3B, 0xFF5252, 0xE040FB, 0x7C4DFF, 0x536DFE, 0x40C4FF];
+
+            for (let i = 0; i < count; i++) {
+                // Random position
+                const r = Math.random() * 27; // Radius
+                const theta = Math.random() * Math.PI * 2;
+                const x = r * Math.cos(theta);
+                const zOriginal = r * Math.sin(theta);
+
+                // Get terrain height
+                const y = hillH(x, zOriginal);
+
+                // Only place on land
+                if (y > WATER_LEVEL + 0.2) {
+                    const z = zOriginal + 10; // Adjust for terrain offset
+
+                    const f = new THREE.Group();
+                    f.position.set(x, y, z);
+
+                    // Random small rotation
+                    f.rotation.x = (Math.random() - 0.5) * 0.3;
+                    f.rotation.z = (Math.random() - 0.5) * 0.3;
+                    f.rotation.y = Math.random() * Math.PI * 2;
+
+                    const stem = new THREE.Mesh(stemGeo, stemMat);
+                    stem.position.y = 0.05;
+                    f.add(stem);
+
+                    const color = petalColors[Math.floor(Math.random() * petalColors.length)];
+                    const petal = new THREE.Mesh(petalGeo, new THREE.MeshLambertMaterial({ color: color }));
+                    petal.position.y = 0.12;
+                    f.add(petal);
+
+                    const scale = 0.8 + Math.random() * 0.5;
+                    f.scale.set(scale, scale, scale);
+
+                    flowerGrp.add(f);
+                }
+            }
+            world.add(flowerGrp);
         }
 
         function mkBoats() {
             // Simple small boats that float on the water and slowly orbit
-            const boatCount = 7; // increased count
+            const boatCount = 15; // Increased count from 7 to 15
             const waterRadius = 52; // matches water geometry radius
+            const terrainRadius = 28; // matches terrain edge in mkHill
+            const minBoatRadius = terrainRadius - 4; // Closer to shore (was -2)
+            const maxBoatRadius = waterRadius - 5; // Keep them more visible (was -1.5)
             for (let i = 0; i < boatCount; i++) {
                 const grp = new THREE.Group();
                 const hull = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.22, 0.65), new THREE.MeshPhongMaterial({ color: 0x663300 }));
@@ -1731,22 +2580,27 @@
                 grp.add(hull);
                 const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.0, 6), new THREE.MeshLambertMaterial({ color: 0x331a00 }));
                 mast.position.y = 0.56; grp.add(mast);
-                const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.56), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+                const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.56), new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
                 sail.position.set(0.19, 0.5, 0); sail.rotation.y = 0.1; grp.add(sail);
 
                 // place on water with circular motion parameters
                 const ang = Math.random() * Math.PI * 2;
-                const r = (waterRadius - 6) * (0.4 + Math.random() * 0.55);
-                grp.position.set(Math.cos(ang) * r, WATER_LEVEL, Math.sin(ang) * r);
+                // Full random spread
+                const r = minBoatRadius + (maxBoatRadius - minBoatRadius) * Math.random();
+                // Center around z=10 to match water plane
+                grp.position.set(Math.cos(ang) * r, WATER_LEVEL, Math.sin(ang) * r + 10);
+
                 // ensure initial placement is over water (not shallow terrain)
                 const tx = grp.position.x, tz = grp.position.z;
-                if (hillH(tx, tz) > WATER_LEVEL - 0.05) {
-                    // push boat outward to deeper water
-                    grp.userData = { angle: ang, radius: Math.min(waterRadius - 3, r + 6), speed: 0.03 * (0.8 + Math.random() * 1.0) };
-                    grp.position.set(Math.cos(ang) * grp.userData.radius, WATER_LEVEL, Math.sin(ang) * grp.userData.radius);
+                // Check hill height relative to center (tz - 10)
+                if (hillH(tx, tz - 10) > WATER_LEVEL - 0.05) {
+                    // push boat outward to deeper water, but not past maxBoatRadius
+                    const safeRadius = Math.min(maxBoatRadius, r + 3);
+                    grp.userData = { orbitAngle: ang, orbitRadius: safeRadius, orbitSpeed: 0.03 * (0.8 + Math.random() * 1.0) };
+                    grp.position.set(Math.cos(ang) * grp.userData.orbitRadius, WATER_LEVEL, Math.sin(ang) * grp.userData.orbitRadius + 10);
                 } else {
                     // slightly faster default speeds for a gentle drift (use dt-based update in loop)
-                    grp.userData = { angle: ang, radius: r, speed: 0.03 * (0.8 + Math.random() * 1.0) };
+                    grp.userData = { orbitAngle: ang, orbitRadius: r, orbitSpeed: 0.03 * (0.8 + Math.random() * 1.0) };
                 }
                 boatsArr.push(grp);
                 world.add(grp);
@@ -1764,7 +2618,8 @@
                 const ang = Math.random() * Math.PI * 2;
                 const r = (waterRadius - 8) * Math.sqrt(Math.random()) * 0.8;
                 const depth = WATER_LEVEL - (0.5 + Math.random() * 1.8);
-                body.position.set(Math.cos(ang) * r, depth, Math.sin(ang) * r);
+                // Center around z=10
+                body.position.set(Math.cos(ang) * r, depth, Math.sin(ang) * r + 10);
                 body.userData = { angle: ang, radius: r, speed: 0.6 * (0.3 + Math.random() * 0.9), depthBase: depth };
                 fishArr.push(body);
                 world.add(body);
@@ -1785,27 +2640,27 @@
                 const pos = pathCurve.getPointAt(currentDogT);
                 dogGrp.position.copy(pos);
                 dogGrp.position.y += 0.4; // Stand ON TOP of the path tube
-                
+
                 // Color Path Progress
-                if(pathTubeMesh) {
+                if (pathTubeMesh) {
                     const colors = pathTubeMesh.geometry.attributes.color;
                     const count = colors.count; // Vertices
                     const rings = 201; // 200 Segments + 1
-                    
+
                     // Use Ceil to ensure gold extends fully to/under the dog
                     const currentRing = Math.ceil(currentDogT * (rings - 1));
-                    const vertsPerRing = count / rings; 
-                    
+                    const vertsPerRing = count / rings;
+
                     // c1: GOLD (Done) | c2: SAND (Future)
                     const c1 = { r: 1.0, g: 0.84, b: 0.0 }; // Gold
                     const c2 = { r: 0.76, g: 0.62, b: 0.44 }; // Sand
-                    
-                    for(let i=0; i<count; i++) {
+
+                    for (let i = 0; i < count; i++) {
                         const rIndex = Math.floor(i / vertsPerRing);
                         if (rIndex <= currentRing) {
-                             colors.setXYZ(i, c1.r, c1.g, c1.b);
+                            colors.setXYZ(i, c1.r, c1.g, c1.b);
                         } else {
-                             colors.setXYZ(i, c2.r, c2.g, c2.b);
+                            colors.setXYZ(i, c2.r, c2.g, c2.b);
                         }
                     }
                     colors.needsUpdate = true;
@@ -1814,7 +2669,7 @@
                 const lt = Math.min(currentDogT + 0.01, 1);
                 const lp = pathCurve.getPointAt(lt); // Use getPointAt here too
                 const dir = new THREE.Vector3().subVectors(lp, pos);
-                if (dir.lengthSq() > 0.0001) dogGrp.rotation.y = Math.atan2(dir.x, dir.z) - Math.PI/2;
+                if (dir.lengthSq() > 0.0001) dogGrp.rotation.y = Math.atan2(dir.x, dir.z) - Math.PI / 2;
                 const moving = Math.abs(targetDogT - currentDogT) > 0.001;
                 const sw = Math.sin(el * (moving ? 8 : 0)) * 0.4;
                 dogGrp.legs.forEach(l => { l.mesh.rotation.x = sw * l.pair; });
@@ -1832,31 +2687,31 @@
                     labelWorld.add(world.position);
                 }
                 labelWorld.y += 1.6; // vertical offset above object
-                if(ground) {
+                if (ground) {
                     const dir = new THREE.Vector3().subVectors(labelWorld, cam3d.position);
                     const distToObj = dir.length();
                     raycaster.set(cam3d.position, dir.normalize());
                     const hits = raycaster.intersectObject(ground);
                     // Only hide if terrain is strictly between camera and label
-                    if(hits.length > 0 && hits[0].distance < distToObj) {
+                    if (hits.length > 0 && hits[0].distance < distToObj) {
                         visible = false;
                     }
                 }
 
                 // Proximity Check for visual indication
                 let dist = 999;
-                if(dogGrp && obj) {
+                if (dogGrp && obj) {
                     dist = dogGrp.position.distanceTo(obj.position);
                 }
-                
+
                 // If close (e.g. within 3.0 units)
-                if(dist < 3.0) {
-                    lbl.classList.add('loc-active'); 
-                    
+                if (dist < 3.0) {
+                    lbl.classList.add('loc-active');
+
                     // Make transparent using CLONED material to avoid shared-material issues
                     obj.traverse(c => {
-                        if(c.isMesh) {
-                            if(!c.userData.isTransparentMode) {
+                        if (c.isMesh) {
+                            if (!c.userData.isTransparentMode) {
                                 c.userData.originalMat = c.material;
                                 const m = c.material.clone();
                                 m.transparent = true;
@@ -1868,10 +2723,10 @@
                     });
                 } else {
                     lbl.classList.remove('loc-active');
-                    
+
                     // Reset to original material
                     obj.traverse(c => {
-                        if(c.isMesh && c.userData.isTransparentMode) {
+                        if (c.isMesh && c.userData.isTransparentMode) {
                             c.material.dispose(); // Start fresh next time
                             c.material = c.userData.originalMat;
                             c.userData.isTransparentMode = false;
@@ -1888,8 +2743,8 @@
                 const v = labelWorld.project(cam3d);
                 if (v.z < 1 && visible) {
                     lbl.style.display = 'block';
-                    lbl.style.left = ((v.x*0.5+0.5)*W) + 'px';
-                    lbl.style.top = ((-v.y*0.5+0.5)*H) + 'px';
+                    lbl.style.left = ((v.x * 0.5 + 0.5) * W) + 'px';
+                    lbl.style.top = ((-v.y * 0.5 + 0.5) * H) + 'px';
                 } else { lbl.style.display = 'none'; }
             });
             // Animate boats and fish (clouds are stationary)
@@ -1897,77 +2752,41 @@
 
             // Boats: move back and forth toward terrain then rotate to go elsewhere
             boatsArr.forEach((b, bi) => {
-                // Initialize movement state if needed
-                if (b.userData.movePhase === undefined) {
-                    b.userData.movePhase = 0; // 0 = toward terrain, 1 = away from terrain, 2 = rotating
-                    b.userData.moveTimer = 0;
-                    b.userData.moveMaxTime = 6 + Math.random() * 4; // longer time for slower movement
-                    b.userData.currentDirection = Math.random() * Math.PI * 2; // initial heading
-                    b.userData.targetDirection = b.userData.currentDirection;
-                    b.userData.baseRadius = 25 + Math.random() * 15; // stay in mid-range
+                // Improved: Boats follow smooth circular orbits, always on water, never on terrain
+                const waterRadius = 52;
+                const terrainRadius = 28;
+                const minBoatRadius = terrainRadius - 4;
+                const maxBoatRadius = waterRadius - 1.5;
+                if (b.userData.orbitAngle === undefined) {
+                    // Assign a random orbit radius and speed within allowed range
+                    b.userData.orbitRadius = minBoatRadius + (maxBoatRadius - minBoatRadius) * Math.random();
+                    b.userData.orbitAngle = Math.random() * Math.PI * 2;
+                    b.userData.orbitSpeed = 0.12 * (0.7 + Math.random() * 0.6) * (Math.random() < 0.5 ? 1 : -1); // random direction
                 }
-
-                b.userData.moveTimer += dt;
-
-                // Phase transitions
-                if (b.userData.moveTimer > b.userData.moveMaxTime) {
-                    b.userData.movePhase = (b.userData.movePhase + 1) % 3;
-                    b.userData.moveTimer = 0;
-                    
-                    if (b.userData.movePhase === 0) {
-                        // Moving toward terrain phase
-                        b.userData.moveMaxTime = 6 + Math.random() * 4;
-                    } else if (b.userData.movePhase === 1) {
-                        // Moving away from terrain phase
-                        b.userData.moveMaxTime = 6 + Math.random() * 4;
-                    } else {
-                        // Pick new direction to rotate toward
-                        b.userData.targetDirection = Math.random() * Math.PI * 2;
-                        b.userData.moveMaxTime = 3 + Math.random() * 2;
-                    }
-                }
-
-                // Calculate radius based on direction and phase
-                let radius = b.userData.baseRadius;
-                if (b.userData.movePhase === 0) {
-                    // Moving toward terrain: decrease radius
-                    const progress = b.userData.moveTimer / b.userData.moveMaxTime;
-                    radius = b.userData.baseRadius - progress * 10;
-                } else if (b.userData.movePhase === 1) {
-                    // Moving away from terrain: increase radius
-                    const progress = b.userData.moveTimer / b.userData.moveMaxTime;
-                    radius = (b.userData.baseRadius - 10) + progress * 10;
-                } else {
-                    // Rotation phase: gradually rotate direction
-                    const progress = b.userData.moveTimer / b.userData.moveMaxTime;
-                    const angleDiff = b.userData.targetDirection - b.userData.currentDirection;
-                    // shortest path around circle
-                    const shortestDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
-                    b.userData.currentDirection += shortestDiff * progress * 0.5;
-                }
-
-
-                // Calculate intended boat position
-                let nxpos = Math.cos(b.userData.currentDirection) * radius;
-                let nzpos = Math.sin(b.userData.currentDirection) * radius;
-                // Check terrain height at intended position
+                // Advance angle for smooth orbit
+                b.userData.orbitAngle += b.userData.orbitSpeed * dt * 0.18;
+                // Clamp radius to always be on water
+                let r = b.userData.orbitRadius;
+                r = Math.max(minBoatRadius, Math.min(maxBoatRadius, r));
+                // Find a valid water position (if not, nudge outward)
+                let nx = Math.cos(b.userData.orbitAngle) * r;
+                let nz = Math.sin(b.userData.orbitAngle) * r + 10; // offset by 10
                 let tries = 0;
-                while (hillH(nxpos, nzpos) > WATER_LEVEL - 0.05 && tries < 20) {
-                    // Push boat outward radially until over water
-                    radius += 0.5;
-                    nxpos = Math.cos(b.userData.currentDirection) * radius;
-                    nzpos = Math.sin(b.userData.currentDirection) * radius;
+                // check terrain relative to its center (nz - 10)
+                while (hillH(nx, nz - 10) > WATER_LEVEL - 0.4 && tries < 40) { // Increased safety margin
+                    r += 1.0; // Push out faster
+                    if (r > maxBoatRadius) r = maxBoatRadius;
+                    nx = Math.cos(b.userData.orbitAngle) * r;
+                    nz = Math.sin(b.userData.orbitAngle) * r + 10;
                     tries++;
                 }
-                b.position.x = nxpos;
-                b.position.z = nzpos;
+                b.position.x = nx;
+                b.position.z = nz;
                 b.position.y = WATER_LEVEL + Math.sin(el * (0.6 + bi * 0.05)) * 0.06;
-
-                // Face direction of travel
-                const lookAhead = 0.02 + b.userData.speed * 0.5;
-                const nextDir = b.userData.currentDirection + lookAhead;
-                const lx = Math.cos(nextDir) * radius;
-                const lz = Math.sin(nextDir) * radius;
+                // Face direction of travel (tangent to orbit)
+                const lookAhead = b.userData.orbitAngle + Math.sign(b.userData.orbitSpeed) * 0.2;
+                const lx = Math.cos(lookAhead) * r;
+                const lz = Math.sin(lookAhead) * r + 10;
                 b.lookAt(new THREE.Vector3(lx, b.position.y, lz));
             });
 
@@ -1977,22 +2796,22 @@
                 const ang = f.userData.angle;
                 const r = f.userData.radius;
                 f.position.x = Math.cos(ang) * r;
-                f.position.z = Math.sin(ang) * r;
+                f.position.z = Math.sin(ang) * r + 10;
                 // gentle vertical bob under the surface
-                f.position.y = f.userData.depthBase + Math.sin(clock3d.getElapsedTime() * (0.8 + fi*0.02 + f.userData.speed*0.1)) * 0.12;
+                f.position.y = f.userData.depthBase + Math.sin(clock3d.getElapsedTime() * (0.8 + fi * 0.02 + f.userData.speed * 0.1)) * 0.12;
                 // orient along velocity vector
                 const vx = -Math.sin(ang) * f.userData.speed;
                 const vz = Math.cos(ang) * f.userData.speed;
                 const look = new THREE.Vector3(f.position.x + vx, f.position.y, f.position.z + vz);
                 f.lookAt(look);
             });
-            
+
             // Camera follow dog with orbit controls
             if (dogGrp) {
                 const target = dogGrp.position.clone().add(camOffset);
                 // Reduce vertical look offset so terrain and sea occupy more upper screen space
                 target.y += 2.0; // previously 5.0
-                
+
                 // Calculate angle of dog relative to center (0,0) to keep camera "outside"
                 // atan2(x, z) gives the angle from the Z axis.
                 // We add PI/2 to align with how we want to view it (or just use as base)
@@ -2002,26 +2821,26 @@
                 // If dog is at (0, 10) -> Angle 90. Cam should be at (..., 10+r).
                 // dogAngle = atan2(z, x).
                 const dogAngle = Math.atan2(dogGrp.position.z, dogGrp.position.x);
-                
+
                 // The camCtrl.th is now an OFFSET from the dog's radial angle
                 // We use (dogAngle + camCtrl.th) to orbit around the dog, 
                 // but 0 offset means "radially outward"
                 const totalAngle = dogAngle + camCtrl.th;
-                
+
                 const cx = camCtrl.r * Math.cos(totalAngle) * Math.sin(camCtrl.ph);
                 const cz = camCtrl.r * Math.sin(totalAngle) * Math.sin(camCtrl.ph);
                 const cy = camCtrl.r * Math.cos(camCtrl.ph);
-                
+
                 // Note: Spherical to Cartesian usually:
                 // y = r * cos(phi) (if phi is from up/pole)
                 // x = r * sin(phi) * cos(theta)
                 // z = r * sin(phi) * sin(theta)
                 // Using this standard mapping to be safe
-                
+
                 cam3d.position.copy(target).add(new THREE.Vector3(cx, cy, cz));
                 cam3d.lookAt(target);
             }
-            
+
             ren3d.render(scene3d, cam3d);
         }
 
@@ -2034,45 +2853,48 @@
         }
 
         // === LOCATION FEATURES ===
+        // === LOCATION FEATURES ===
+        // Rearranged: Tasks that sound like "work/effort" are Quests (Green, Earn Coins).
+        // Tasks that sound like "fun/luxury/items" are Rewards (Red, Spend Coins).
         const locFeatures = {
             'Home Base': {
                 desc: 'Where every adventure begins. Rest up and prepare!',
                 unlockCoins: 0,
                 activities: [
-                    { name: 'Rest & Recover', desc: 'Take a break, recharge your energy.', reward: 10, type: 'quest' },
-                    { name: 'Plan Your Day', desc: 'Set daily goals for bonus motivation.', reward: 15, type: 'quest' }
+                    { name: 'Rest & Recover', desc: 'Sleep like a queen.', reward: 40, type: 'quest' },
+                    { name: 'Make Coffee', desc: 'Brew a fresh cup of barista-quality coffee.', reward: 20, type: 'quest' }
                 ]
             },
             'Choco Hill': {
                 desc: 'A sweet hilltop covered in cocoa dreams.',
                 unlockCoins: 500,
                 activities: [
-                    { name: 'Chocolate Tasting', desc: 'Sample rare flavors from around the world.', reward: 25, type: 'quest' },
-                    { name: 'Bake Brownies', desc: 'Whip up a batch of fudgy goodness.', reward: 40, type: 'quest' }
+                    { name: 'Bake Brownies', desc: 'Whip up a batch of fudgy goodness for the shop.', reward: 80, type: 'quest' },
+                    { name: 'Chocolate Tasting', desc: 'Sample rare flavors from around the world.', reward: 25, type: 'reward' }
                 ]
             },
             'Puppy Park': {
                 desc: 'The happiest place on earth for good boys.',
                 unlockCoins: 1500,
                 activities: [
-                    { name: 'Fetch Champion', desc: 'Play 20 rounds of fetch with Louis.', reward: 35, type: 'quest' },
-                    { name: 'Dog Training', desc: 'Teach a new trick.', reward: 50, type: 'quest' }
+                    { name: 'Fetch Champion', desc: 'Enter the tournament with Louis.', reward: 60, type: 'quest' },
+                    { name: 'Teach a Trick', desc: 'Teach Louis a new skill.', reward: 50, type: 'quest' }
                 ]
             },
             'Bubble Tea': {
                 desc: 'Refreshing drinks and chill vibes.',
                 unlockCoins: 3000,
                 activities: [
-                    { name: 'Try a New Flavor', desc: 'Something adventurous today?', reward: 20, type: 'quest' },
-                    { name: 'Boba Date', desc: 'Share a drink with a friend.', reward: 30, type: 'quest' }
+                    { name: 'Buy Bubble Tea', desc: 'Choose your favorite flavor!', reward: 25, type: 'reward' },
+                    { name: 'Boba Date', desc: 'Share a fruity drink with a friend.', reward: 30, type: 'reward' }
                 ]
             },
             'Shopping City': {
                 desc: 'Retail therapy at its finest.',
                 unlockCoins: 5000,
                 activities: [
-                    { name: 'Window Shopping', desc: 'Explore without spending (just coins!).', reward: 20, type: 'quest' },
-                    { name: 'Find a Bargain', desc: 'Hunt for the best deal.', reward: 45, type: 'quest' }
+                    { name: 'Window Shopping', desc: 'Resist buying anything!', reward: 55, type: 'quest' },
+                    { name: 'Find a Bargain', desc: 'Hunt for the best deal.', reward: 150, type: 'reward' }
                 ]
             },
             'Sushi Palace': {
@@ -2080,79 +2902,79 @@
                 unlockCoins: 7000,
                 activities: [
                     { name: 'Make Sushi', desc: 'Roll your own maki masterpiece.', reward: 55, type: 'quest' },
-                    { name: 'Omakase Challenge', desc: 'Eat whatever the chef prepares!', reward: 40, type: 'quest' }
+                    { name: 'Origami Earrings', desc: 'Hand-folded paper art jewelry.', reward: 120, type: 'reward' }
                 ]
             },
             'Spa Island': {
                 desc: 'Ultimate relaxation for mind & body.',
                 unlockCoins: 10000,
                 activities: [
-                    { name: 'Face Mask Session', desc: 'Pamper yourself like royalty.', reward: 35, type: 'quest' },
-                    { name: 'Meditation Hour', desc: '60 minutes of pure zen.', reward: 60, type: 'quest' }
+                    { name: 'Towel Duty', desc: 'Fold fresh towels for the spa.', reward: 30, type: 'quest' },
+                    { name: 'Meditation Hour', desc: '60 minutes of pure zen.', reward: 60, type: 'reward' }
                 ]
             },
             'Bakery': {
                 desc: 'Freshly baked pink cupcakes and sweet treats.',
                 unlockCoins: 250,
                 activities: [
-                    { name: 'Decorate Cupcake', desc: 'Add sprinkles and cherries!', reward: 20, type: 'quest' },
-                    { name: 'Eat Croissant', desc: 'Buttery goodness.', reward: 10, type: 'quest' }
+                    { name: 'Decorate Cupcake', desc: 'Bring home some sweat treats.', reward: 40, type: 'quest' },
+                    { name: 'Eat Croissant or any other sweet treat', desc: 'Buttery goodness.', reward: 10, type: 'reward' }
                 ]
             },
             'Koala Corner': {
                 desc: 'A cozy tree for naps and cuddles.',
                 unlockCoins: 1000,
                 activities: [
-                    { name: 'Hug a Tree', desc: 'Channel your inner koala.', reward: 30, type: 'quest' },
-                    { name: 'Power Nap', desc: 'Sleep for 20 hours (or 20 mins).', reward: 50, type: 'quest' }
+                    { name: 'Hug a Tree', desc: 'Channel your inner koala gratitude by travelling to the nearest forest.', reward: 30, type: 'quest' },
+                    { name: 'Rent Hammock', desc: 'A premium nap spot.', reward: 50, type: 'reward' }
                 ]
             },
             'Pink Boutique': {
-                desc: 'Everything belongs to Bianca here.',
+                desc: 'Everything belongs to me here.',
                 unlockCoins: 4000,
                 activities: [
-                    { name: 'Buy Earrings', desc: 'Shiny things are best.', reward: 40, type: 'quest' },
-                    { name: 'Lace Shopping', desc: 'Find the perfect fit.', reward: 45, type: 'quest' }
+                    { name: 'Organize Clothes', desc: 'Clean up and arrange the racks.', reward: 150, type: 'quest' },
+                    { name: 'Buy New Outfit', desc: 'Treat yourself to something stylish.', reward: 150, type: 'reward' }
                 ]
             },
             'Cozy Cinema': {
                 desc: 'Movies under the stars with blankets.',
                 unlockCoins: 6000,
                 activities: [
-                    { name: 'Watch RomCom', desc: 'Cry happy tears.', reward: 35, type: 'quest' },
-                    { name: 'Popcorn Feast', desc: 'Sweet or salty? Both!', reward: 15, type: 'quest' }
+                    { name: 'Sweep Popcorn', desc: 'Clean up after the show.', reward: 25, type: 'quest' },
+                    { name: 'Watch a Movie', desc: 'Any film of your choice at the cinema!', reward: 80, type: 'reward' }
                 ]
             },
             'Greek Taverna': {
                 desc: 'Opa! Delicious food and smashing plates.',
                 unlockCoins: 8500,
                 activities: [
-                    { name: 'Sirtaki Dance', desc: 'Dance until you drop.', reward: 50, type: 'quest' },
-                    { name: 'Plate Smashing', desc: 'Release some stress!', reward: 25, type: 'quest' }
+                    { name: 'Cook Greek Food', desc: 'Prepare a traditional feast.', reward: 80, type: 'quest' },
+                    { name: 'Greek Feast', desc: 'Dining out at the restaurant.', reward: 80, type: 'reward' }
                 ]
             },
             'Beaver Lodge': {
-                desc: 'Hard work pays off in this zodiac home.',
+                desc: 'Hard work pays off in this home.',
                 unlockCoins: 11000,
                 activities: [
-                    { name: 'Build Dam', desc: 'Stack those logs.', reward: 60, type: 'quest' },
-                    { name: 'Gnaw Wood', desc: 'Keep those teeth sharp.', reward: 20, type: 'quest' }
+                    { name: 'Build Dam', desc: 'Stack those logs by tidying up the bedroom.', reward: 60, type: 'quest' },
+                    { name: 'Buy Cleaning Supplies', desc: 'Premium tools for a spotless dam.', reward: 45, type: 'quest' }
                 ]
             },
             'Penguin Iceberg': {
                 desc: 'Slide into fun on the ice.',
                 unlockCoins: 12500,
                 activities: [
-                    { name: 'Belly Slide', desc: 'Wheeeee!', reward: 40, type: 'quest' },
-                    { name: 'Catch Fish', desc: 'Yummy sashim- wait, raw fish.', reward: 50, type: 'quest' }
+                    { name: 'Catch Fish', desc: 'Gather lunch for the colony.', reward: 50, type: 'quest' },
+                    { name: 'Ice Slide Ticket', desc: 'Wheeeee! Go to the Ice Rink!', reward: 50, type: 'reward' }
                 ]
             },
             'Opera House': {
                 desc: 'Where elegance meets adventure. The summit!',
                 unlockCoins: 14000,
                 activities: [
-                    { name: 'Attend a Show', desc: 'Dress up and enjoy the performance.', reward: 70, type: 'quest' },
-                    { name: 'Dance on Stage', desc: 'Your moment in the spotlight!', reward: 100, type: 'quest' }
+                    { name: 'Dance on Stage', desc: 'Book a dancing lesson.', reward: 100, type: 'reward' },
+                    { name: 'Attend a Show', desc: 'Dress up and enjoy the performance.', reward: 70, type: 'reward' }
                 ]
             }
         };
@@ -2172,21 +2994,36 @@
                 status.innerText = '\uD83D\uDD12 Requires ' + feat.unlockCoins + ' coins \u2014 ' + feat.desc;
             }
             const acts = document.getElementById('loc-activities');
-            acts.innerHTML = feat.activities.map((a, i) => `
+            acts.innerHTML = feat.activities.map((a, i) => {
+                // Check type: 'quest' adds coins, 'reward' costs coins
+                const isQuest = a.type === 'quest';
+                const canAfford = isQuest || coins >= a.reward;
+                const btnLabel = isQuest ? 'DO IT' : 'BUY';
+                const rewardTxt = isQuest ? `+${a.reward} Coins` : `Price: ${a.reward} Coins`;
+                const color = isQuest ? '#34c759' : '#ff2d55';
+
+                return `
                 <div class="loc-act-card">
                     <div>
                         <div class="la-info">${a.name}</div>
                         <div class="la-desc">${a.desc}</div>
-                        <div class="la-reward">+${a.reward} Coins</div>
+                        <div class="la-reward" style="color:${color}">${rewardTxt}</div>
                     </div>
-                    <button class="loc-act-btn" ${!unlocked ? 'disabled' : ''} onclick="doLocActivity(${a.reward})">DO IT</button>
+                    <button class="loc-act-btn" ${!unlocked || !canAfford ? 'disabled' : ''} onclick="doLocActivity(${a.reward}, '${a.type}')">${btnLabel}</button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
             document.getElementById('loc-overlay').classList.add('show');
         }
 
-        function doLocActivity(reward) {
-            coins += reward; total += reward;
+        function doLocActivity(amt, type) {
+            if (type === 'reward') {
+                if (coins < amt) return;
+                coins -= amt;
+            } else {
+                // Quest
+                coins += amt; total += amt;
+            }
             confetti({ particleCount: 40, spread: 50, origin: { y: 0.7 } });
             save(); render(); closeLoc();
         }
@@ -2196,9 +3033,9 @@
         }
 
         // === PROFILE SYSTEM ===
-        const avatarChoices = ['\uD83D\uDC15','\uD83D\uDC31','\uD83E\uDD84','\uD83E\uDDA9','\uD83D\uDC27','\uD83D\uDC3C','\uD83E\uDDDA\u200D\u2640\uFE0F','\uD83E\uDE70','\uD83C\uDF1F','\uD83C\uDF38'];
+        const avatarChoices = ['\uD83D\uDC15', '\uD83D\uDC31', '\uD83E\uDD84', '\uD83E\uDDA9', '\uD83D\uDC27', '\uD83D\uDC3C', '\uD83E\uDDDA\u200D\u2640\uFE0F', '\uD83E\uDE70', '\uD83C\uDF1F', '\uD83C\uDF38'];
         // Profile declared above
-        
+
         function showProfile() {
             document.getElementById('pf-avatar-display').innerText = profile.avatar;
             document.getElementById('pf-name-display').innerText = profile.name;
@@ -2206,26 +3043,26 @@
             document.getElementById('pf-coins').innerText = coins;
             document.getElementById('pf-total').innerText = total;
             document.getElementById('pf-vouchers').innerText = vouchers.filter(v => !v.redeemed).length;
-            
+
             // Cloud Status
             let cloudStatus = document.getElementById('pf-cloud-status');
-            if(!cloudStatus) {
-                 cloudStatus = document.createElement('div');
-                 cloudStatus.id = 'pf-cloud-status';
-                 cloudStatus.style.marginTop = '10px';
-                 cloudStatus.style.fontSize = '12px';
-                 cloudStatus.style.color = '#8e8e93';
-                 cloudStatus.innerText = '☁️ Offline Mode';
-                 document.querySelector('.profile-modal').appendChild(cloudStatus);
-                 
-                 // Add Force Save Button
-                 const forceBtn = document.createElement('button');
-                 forceBtn.innerText = "↻ Force Save";
-                 forceBtn.style.cssText = "margin-top:5px; background:#e5e5ea; border:none; padding:5px 10px; border-radius:8px; font-size:11px; cursor:pointer;";
-                 forceBtn.onclick = () => { save(); alert('Save triggered! Check status.'); };
-                 document.querySelector('.profile-modal').appendChild(forceBtn);
+            if (!cloudStatus) {
+                cloudStatus = document.createElement('div');
+                cloudStatus.id = 'pf-cloud-status';
+                cloudStatus.style.marginTop = '10px';
+                cloudStatus.style.fontSize = '12px';
+                cloudStatus.style.color = '#8e8e93';
+                cloudStatus.innerText = '☁️ Offline Mode';
+                document.querySelector('.profile-modal').appendChild(cloudStatus);
+
+                // Add Force Save Button
+                const forceBtn = document.createElement('button');
+                forceBtn.innerText = "↻ Force Save";
+                forceBtn.style.cssText = "margin-top:5px; background:#e5e5ea; border:none; padding:5px 10px; border-radius:8px; font-size:11px; cursor:pointer;";
+                forceBtn.onclick = () => { save(); alert('Save triggered! Check status.'); };
+                document.querySelector('.profile-modal').appendChild(forceBtn);
             }
-            if(window.isFirebaseReady && auth && auth.currentUser) {
+            if (window.isFirebaseReady && auth && auth.currentUser) {
                 cloudStatus.innerText = '✅ Cloud ID: ' + (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : "User");
                 cloudStatus.style.color = '#34c759';
                 cloudStatus.style.fontWeight = 'bold';
@@ -2279,9 +3116,9 @@
             const b = document.getElementById('pf-bio-input').value.trim();
             if (n) profile.name = n;
             profile.bio = b || '';
-            
+
             save(); // Use unified optimistic save
-            
+
             document.getElementById('pf-name-display').innerText = profile.name;
             document.getElementById('pf-bio-display').innerText = profile.bio;
             document.getElementById('pf-avatar-display').innerText = profile.avatar;
@@ -2294,13 +3131,13 @@
 
         function enterApp() {
             const val = document.getElementById('pass').value.trim();
-            
+
             // LOCAL LOGIN
-            if(val.toLowerCase() === 'louis') {
+            if (val.toLowerCase() === 'louis') {
                 startApp();
                 return;
             }
-            
+
             // CLOUD LOGIN ATTEMPT
             if (window.isFirebaseReady) {
                 // If they enter something else, try to use it as a "Secret Code" login
@@ -2308,8 +3145,8 @@
                 if (val.length > 3) {
                     const cleanVal = val.trim().toLowerCase(); // Always lowercase for consistency
                     const fakeEmail = cleanVal.replace(/\s/g, '') + "@questapp.local";
-                    const fakePass = "secret_" + cleanVal.replace(/\s/g, ''); 
-                    
+                    const fakePass = "secret_" + cleanVal.replace(/\s/g, '');
+
                     // Try to login or create
                     auth.signInWithEmailAndPassword(fakeEmail, fakePass)
                         .then(() => {
@@ -2317,15 +3154,15 @@
                             startApp(true);
                         })
                         .catch(e => {
-                            if(e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-login-credentials') {
+                            if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential' || e.code === 'auth/invalid-login-credentials') {
                                 // Create new
-                                if(confirm("New profile detected: '" + val + "'. Create new cloud save?")) {
+                                if (confirm("New profile detected: '" + val + "'. Create new cloud save?")) {
                                     auth.createUserWithEmailAndPassword(fakeEmail, fakePass)
                                         .then(() => {
                                             // Force save immediately to seed the cloud with current local data
                                             // We need to ensure we set the profile name correctly first
                                             profile.name = val;
-                                            save(); 
+                                            save();
                                             alert("Cloud Profile Created! Sync active.");
                                             startApp(true);
                                         })
@@ -2344,13 +3181,13 @@
                 alert('Password incorrect. (Cloud Sync not configured)');
             }
         }
-        
+
         let isWaitingForSync = false;
 
         function startApp(isCloud = false) {
             document.getElementById('login').style.display = 'none';
-            
-            if(isCloud) {
+
+            if (isCloud) {
                 // Show blocking loader
                 isWaitingForSync = true;
                 const loader = document.createElement('div');
@@ -2364,7 +3201,7 @@
             document.getElementById('header-avatar').innerText = profile.avatar;
             render();
             scheduleCat(true);
-            
+
             // Start Cloud Sync if available
             if (db) {
                 // Check if already signed in
@@ -2373,18 +3210,18 @@
                         console.log("Synced as " + u.uid);
                         setupSync(u.uid);
                     } else if (isCloud) {
-                         // Wait a bit, sometimes auth propagates slowly
-                         setTimeout(() => {
-                             if(auth.currentUser) {
-                                 setupSync(auth.currentUser.uid);
-                             } else {
-                                 console.error("Cloud mode requested but no user found?");
-                                 if(document.getElementById('cloud-loader')) {
-                                     document.getElementById('cloud-loader').innerHTML = '⚠️ Login Failed. Try again.';
-                                     setTimeout(() => location.reload(), 2000);
-                                 }
-                             }
-                         }, 2000);
+                        // Wait a bit, sometimes auth propagates slowly
+                        setTimeout(() => {
+                            if (auth.currentUser) {
+                                setupSync(auth.currentUser.uid);
+                            } else {
+                                console.error("Cloud mode requested but no user found?");
+                                if (document.getElementById('cloud-loader')) {
+                                    document.getElementById('cloud-loader').innerHTML = '⚠️ Login Failed. Try again.';
+                                    setTimeout(() => location.reload(), 2000);
+                                }
+                            }
+                        }, 2000);
                     }
                 });
             }
@@ -2396,80 +3233,63 @@
             unsubscribe = userRef.onSnapshot({ includeMetadataChanges: true }, doc => {
                 const isCache = doc.metadata.fromCache;
                 console.log("Snapshot from:", isCache ? "Cache" : "Server");
-                
+
                 const loader = document.getElementById('cloud-loader');
-                
+
                 // 1. DATA PROCESSING (Always update UI with what we have)
                 if (doc.exists) {
                     const d = doc.data();
-                    
-                    // TIMESTAMP SYNC LOGIC
-                    // 1. Get Local Timestamp
-                    const localTime = parseInt(localStorage.getItem('b_lastSaveTime') || '0');
-                    
-                    // 2. Get Cloud Timestamp
-                    let cloudTime = d.lastSaveTime || 0;
-                    if (!cloudTime && d.lastUpdated) {
-                        cloudTime = d.lastUpdated.toMillis ? d.lastUpdated.toMillis() : 0;
-                    }
 
-                    // 3. Sync Decision Strategy
-                    // We accept Cloud Data if:
-                    // A. We are in the initial loading phase (isWaitingForSync)
-                    // B. Cloud data is explicitly newer (cloudTime > localTime)
-                    // C. Cloud has MORE progress (total > local total) - catch-up/merge logic
-                    //    (This fixes the 'stuck on old data' issue if timestamps are messy)
-                    
-                    const cloudTotal = d.total || 0;
-                    const isNewer = cloudTime > localTime;
-                    const isMoreProgress = cloudTotal > total;
-                    
-                    // If it's a "Pending Write" (our own local save echoing back), ignore conflict checks to prevent loops
-                    const isLocalEcho = doc.metadata.hasPendingWrites; 
+                    // SIMPLIFIED SYNC STRATEGY:
+                    // If we have cloud data, use it.
+                    // The only exception is if this snapshot is a "Local Echo" (hasPendingWrites),
+                    // which means it's just confirming our own recent save.
 
-                    let shouldSync = false;
-                    
-                    if (isWaitingForSync) shouldSync = true;
-                    else if (isLocalEcho) shouldSync = false; // It's our own data, we already have it
-                    else if (isNewer || isMoreProgress) shouldSync = true;
+                    const isLocalEcho = doc.metadata.hasPendingWrites;
 
-                    if (!shouldSync) {
-                        console.log("Ignored Cloud Data: Local is newer or identical.", { cloudTime, localTime, cloudTotal, total });
-                    } else {
-                        console.log("Syncing Cloud Data...", { reason: isWaitingForSync ? "Init" : (isNewer ? "Newer" : "Progress"), cloudTotal, total });
-                        
-                        if(d.coins !== undefined) coins = d.coins;
-                        if(d.total !== undefined) total = d.total;
+                    if (!isLocalEcho) {
+                        console.log("Receiving Cloud Update...", { cloudTotal: d.total, localTotal: total });
 
-                        try { if(d.vouchers) vouchers = JSON.parse(d.vouchers); } catch(e){}
-                        
+                        if (d.coins !== undefined) coins = d.coins;
+                        if (d.total !== undefined) total = d.total;
+
+                        try { if (d.vouchers) vouchers = JSON.parse(d.vouchers); } catch (e) { }
+
                         // Safe Parse for Custom Items
-                        try { 
-                            if(d.customQuests) {
+                        try {
+                            if (d.customQuests) {
                                 const parsed = JSON.parse(d.customQuests);
-                                if(Array.isArray(parsed)) customQuests = parsed;
+                                if (Array.isArray(parsed)) customQuests = parsed;
                             }
-                        } catch(e){}
+                        } catch (e) { }
 
-                        try { 
-                            if(d.customRewards) {
+                        try {
+                            if (d.customRewards) {
                                 const parsed = JSON.parse(d.customRewards);
-                                if(Array.isArray(parsed)) customRewards = parsed;
+                                if (Array.isArray(parsed)) customRewards = parsed;
                             }
-                        } catch(e){}
-                        
-                        if(d.profile) profile = d.profile;
-                        
+                        } catch (e) { }
+
+                        if (d.profile) profile = d.profile;
+
+                        if (d.treats !== undefined) treats = d.treats;
+                        if (d.totalStudyMinutes !== undefined) {
+                            totalStudyMinutes = d.totalStudyMinutes;
+                            if (typeof mkFlowers === 'function') mkFlowers();
+                        }
+
                         localStorage.setItem('b_coins', coins);
                         localStorage.setItem('b_total', total);
+                        localStorage.setItem('b_treats', treats);
+                        localStorage.setItem('b_totalStudyMinutes', totalStudyMinutes);
                         localStorage.setItem('b_profile', JSON.stringify(profile));
                         localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
                         localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
                         localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
-                        
+
                         // Sync timestamps - Set local to cloud time to prevent bounce-back
                         localStorage.setItem('b_lastSaveTime', cloudTime || Date.now());
-                        
+
                         render();
                         document.getElementById('header-avatar').innerText = profile.avatar;
                     }
@@ -2481,18 +3301,18 @@
                         // We have cached data, but waiting for server confirmation
                         // Changing text so user knows we are checking
                         const txt = loader.querySelector('div:last-child');
-                        if(txt) txt.innerText = "Verifying with Server...";
-                        
+                        if (txt) txt.innerText = "Verifying with Server...";
+
                         // Fallback: If server doesn't respond in 5s, assume offline and unlock
-                        if(!window.syncFallbackTimer) {
+                        if (!window.syncFallbackTimer) {
                             window.syncFallbackTimer = setTimeout(() => {
                                 const l = document.getElementById('cloud-loader');
-                                if(l) {
+                                if (l) {
                                     l.remove();
                                     isWaitingForSync = false;
                                     console.warn("Server timed out, using cache.");
                                     const status = document.getElementById('pf-cloud-status');
-                                    if(status) {
+                                    if (status) {
                                         status.innerText = '⚠️ Offline Mode (Cached)';
                                         status.style.color = '#ffcc00';
                                     }
@@ -2501,40 +3321,40 @@
                         }
                     } else {
                         // Server Data Received! or Confirmed Non-Existence
-                        if(window.syncFallbackTimer) clearTimeout(window.syncFallbackTimer);
-                        
+                        if (window.syncFallbackTimer) clearTimeout(window.syncFallbackTimer);
+
                         loader.innerHTML = '<div style="font-size:60px;">✅</div><div>Synced!</div>';
                         isWaitingForSync = false;
                         setTimeout(() => loader.remove(), 800);
                     }
                 } else {
                     // Runtime update (background) - ensure lock is off
-                    isWaitingForSync = false; 
+                    isWaitingForSync = false;
                 }
-                
+
                 // Update Badge
                 let cloudStatus = document.getElementById('pf-cloud-status');
-                if(cloudStatus && !isCache && doc.exists) {
+                if (cloudStatus && !isCache && doc.exists) {
                     cloudStatus.innerText = '✅ Synced: ' + (auth.currentUser.email ? auth.currentUser.email.split('@')[0] : "Profile");
                     cloudStatus.style.color = '#34c759';
                 }
 
                 if (!doc.exists && !isCache) {
                     // Server confirms no data exists -> First Save
-                    save(); 
+                    save();
                 }
             }, err => {
                 console.error("Sync failed", err);
                 isWaitingForSync = false;
-                if(document.getElementById('cloud-loader')) document.getElementById('cloud-loader').remove();
+                if (document.getElementById('cloud-loader')) document.getElementById('cloud-loader').remove();
             });
         }
-        
+
         // linkCloud function removed as it is no longer used
 
         function render() {
             document.getElementById('coin-txt').innerText = "💰 " + coins.toString().padStart(4, '0');
-            
+
             // Rank Logic
             let idx = getRankIdx();
             document.getElementById('rank-name').innerText = rankData[idx].name;
@@ -2551,8 +3371,56 @@
             if (openCount > 0) { badge.style.display = 'block'; badge.innerText = openCount; }
             else { badge.style.display = 'none'; }
 
-            // List Render
             const list = document.getElementById('main-list');
+
+            // TIMER TAB RENDER
+            if (tab === 't') {
+                const btnColor = isThesisRunning ? '#ff3b30' : '#34c759';
+                const btnText = isThesisRunning ? 'STOP SESSION' : 'START FOCUS';
+                const statusText = isThesisRunning ? 'Focusing...' : 'Ready to work?';
+
+                // Dog mood based on treats
+                let dogMood = "🐶";
+                let dogMsg = "I'm hungry for knowledge (and treats)!";
+                if (treats === 0) { dogMood = "🥺"; dogMsg = "No treats yet... Louis is sad."; }
+                else if (treats < 5) { dogMood = "🐕"; dogMsg = "Yum! Louis wants more!"; }
+                else if (treats < 10) { dogMood = "😋"; dogMsg = "Louis is happy!"; }
+                else { dogMood = "🦴❤️"; dogMsg = "Louis loves you! Mastery achieved!"; }
+
+                list.innerHTML = `
+                    <div style="text-align:center; padding:40px 20px; animation:cat-appear 0.5s;">
+                        <div style="font-size:80px; margin-bottom:20px;">🎓</div>
+                        <h2 style="margin-bottom:10px;">Master Thesis</h2>
+                        <p style="color:#8e8e93; margin-bottom:20px;">Earn <b>2 Coins</b> + <b>1 Treat 🦴</b> per minute.</p>
+                        
+                        <div style="background:#f2f2f7; border-radius:16px; padding:15px; margin-bottom:30px; display:inline-block; min-width:200px;">
+                            <div style="font-size:40px;">${dogMood}</div>
+                            <div style="font-weight:bold; margin-top:5px;" id="timer-treats-display">Treats: ${treats}</div>
+                            <div style="font-size:12px; color:#8e8e93;">${dogMsg}</div>
+                        </div>
+
+                        <div id="timer-display" style="font-size:64px; font-weight:800; font-family:monospace; margin-bottom:10px; color:#333; font-variant-numeric: tabular-nums;">
+                            ${formatTime(thesisSeconds)}
+                        </div>
+                        <div style="color:${isThesisRunning ? '#34c759' : '#8e8e93'}; font-weight:bold; margin-bottom:40px;">${statusText}</div>
+
+                        <button class="btn-ios" style="background:${btnColor}; padding:20px 40px; font-size:18px; width:100%; max-width:280px; box-shadow:0 10px 30px rgba(0,0,0,0.15);" onclick="toggleThesisTimer()">
+                            ${btnText}
+                        </button>
+                        
+                        <div style="margin-top: 50px; border-top: 1px solid #e5e5ea; padding-top: 20px;">
+                            <p style="font-size: 13px; color: #8e8e93; margin-bottom: 10px;">Forgot to start the timer?</p>
+                            <div style="display:flex; gap:10px; max-width:200px; margin:0 auto;">
+                                <input type="number" id="manual-mins" placeholder="Mins" style="flex:1; padding:10px; border:1px solid #d1d1d6; border-radius:10px; text-align:center;">
+                                <button class="btn-ios" style="flex:1; padding:10px; font-size:13px;" onclick="addManualTime()">Add</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            // List Render (Quests/Shop)
             const allQuests = quests.concat(customQuests);
             const allShop = shop.concat(customRewards);
             const items = (tab === 'q') ? allQuests : allShop;
@@ -2562,21 +3430,21 @@
                 const isCustom = idx >= baseLen;
                 const customIdx = idx - baseLen;
                 return `
-                <div class="card" style="${tab==='s' && coins < i.p ? 'opacity:0.6' : ''}; position:relative;">
+                <div class="card" style="${tab === 's' && coins < i.p ? 'opacity:0.6' : ''}; position:relative;">
                     ${isCustom ? `<div onclick="deleteItem('${tab}', ${customIdx})" style="position:absolute; top:8px; right:8px; width:20px; height:20px; text-align:center; line-height:20px; font-size:14px; color:#ff3b30; cursor:pointer; background:rgba(0,0,0,0.05); border-radius:50%; z-index:10;">✕</div>` : ''}
                     <div>
                         <div style="font-weight:800; padding-right:24px;">${i.t}</div>
                         <div style="font-size:12px; color:#8e8e93;">${i.d || ''}</div>
-                        <div style="color:${tab==='q' ? '#ff9500' : 'var(--ios-pink)'}; font-weight:800; margin-top:5px;">
-                            ${tab==='q' ? '+'+i.r+' Coins' : 'Price: '+i.p}
+                        <div style="color:${tab === 'q' ? '#ff9500' : 'var(--ios-pink)'}; font-weight:800; margin-top:5px;">
+                            ${tab === 'q' ? '+' + i.r + ' Coins' : 'Price: ' + i.p}
                         </div>
                     </div>
-                    <button class="btn-ios" ${tab==='s' && coins < i.p ? 'disabled' : ''} onclick="${tab==='q' ? 'doQuest('+i.r+')' : 'doBuy(\''+i.t.replace(/'/g,"\\\\'")+'\','+i.p+')'}">
-                        ${tab==='q' ? 'DONE' : 'BUY'}
+                    <button class="btn-ios" ${tab === 's' && coins < i.p ? 'disabled' : ''} onclick="${tab === 'q' ? 'doQuest(' + i.r + ')' : 'doBuy(\'' + i.t.replace(/'/g, "\\\\'") + '\',' + i.p + ')'}">
+                        ${tab === 'q' ? 'DONE' : 'BUY'}
                     </button>
                 </div>
             `}).join('');
-            list.innerHTML += '<button class="add-quest-btn" onclick="' + (tab==='q' ? 'showAddQuest()' : 'showAddReward()') + '">+ Add ' + (tab==='q' ? 'Quest' : 'Reward') + '</button>';
+            list.innerHTML += '<button class="add-quest-btn" onclick="' + (tab === 'q' ? 'showAddQuest()' : 'showAddReward()') + '">+ Add ' + (tab === 'q' ? 'Quest' : 'Reward') + '</button>';
 
             // Update location label lock/unlock styling
             locLabels3d.forEach(({ el: lbl, loc }) => {
@@ -2591,15 +3459,87 @@
             });
         }
 
+        function addManualTime() {
+            const inp = document.getElementById('manual-mins');
+            const mins = parseInt(inp.value);
+            if (!mins || mins <= 0) {
+                alert("Please enter a valid number of minutes.");
+                return;
+            }
+            if (mins > 600) {
+                if (!confirm("Are you sure you studied for " + mins + " minutes? That's a lot!")) return;
+            }
+
+            const reward = mins * 2;
+            const treatReward = mins;
+
+            coins += reward;
+            total += reward;
+            treats += treatReward;
+            totalStudyMinutes += mins;
+
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            save();
+            render();
+            mkFlowers();
+            alert(`Manual Entry: Added ${reward} Coins and ${treatReward} Treats for ${mins} minutes.`);
+        }
+
+        function toggleThesisTimer() {
+            if (isThesisRunning) {
+                clearInterval(thesisTimer);
+                isThesisRunning = false;
+                const mins = Math.floor(thesisSeconds / 60);
+                const reward = mins * 2;
+                const treatReward = mins; // 1 treat per minute
+
+                if (reward > 0) {
+                    coins += reward;
+                    total += reward;
+                    treats += treatReward;
+                    totalStudyMinutes += mins;
+                    alert('Great focus! You earned ' + reward + ' Coins and ' + treatReward + ' Treats!');
+                    confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                    save();
+                    mkFlowers();
+                } else {
+                    alert("Keep focusing! You need at least 1 minute to earn coins.");
+                }
+                thesisSeconds = 0;
+                render();
+            } else {
+                isThesisRunning = true;
+                thesisTimer = setInterval(() => {
+                    thesisSeconds++;
+                    const el = document.getElementById('timer-display');
+                    if (el) el.innerText = formatTime(thesisSeconds);
+
+                    // Live Treat Update
+                    const pending = Math.floor(thesisSeconds / 60);
+                    const tEl = document.getElementById('timer-treats-display');
+                    if (tEl) tEl.innerText = "Treats: " + (treats + pending);
+                }, 1000);
+                render();
+            }
+        }
+
+        function formatTime(totalSeconds) {
+            const h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+            const m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+            const s = (totalSeconds % 60).toString().padStart(2, '0');
+            return h + ':' + m + ':' + s;
+        }
+
         function setTab(t) {
             tab = t;
-            document.getElementById('tab-q').className = t==='q' ? 'tab active' : 'tab';
-            document.getElementById('tab-s').className = t==='s' ? 'tab active' : 'tab';
+            document.getElementById('tab-q').className = t === 'q' ? 'tab active' : 'tab';
+            document.getElementById('tab-t').className = t === 't' ? 'tab active' : 'tab';
+            document.getElementById('tab-s').className = t === 's' ? 'tab active' : 'tab';
             render();
         }
 
         function deleteItem(type, idx) {
-            if(confirm('Delete this custom item?')) {
+            if (confirm('Delete this custom item?')) {
                 if (type === 'q') customQuests.splice(idx, 1);
                 else customRewards.splice(idx, 1);
                 save();
@@ -2632,9 +3572,9 @@
                         <div class="v-title">${v.title}</div>
                         <div class="v-date">${v.redeemed ? 'Used ' + v.redeemedDate : 'Claimed ' + v.date}</div>
                         ${v.redeemed
-                            ? '<span class="v-status used">REDEEMED</span>'
-                            : '<span class="v-status open" onclick="redeemVoucher(' + i + ')">\u2728 REDEEM</span>'
-                        }
+                        ? '<span class="v-status used">REDEEMED</span>'
+                        : '<span class="v-status open" onclick="redeemVoucher(' + i + ')">\u2728 REDEEM</span>'
+                    }
                     </div>
                 `).join('');
             }
@@ -2684,7 +3624,7 @@
         function save() {
             // Safety: Do not save if we are still waiting for initial cloud sync
             // This prevents overwriting the cloud with empty local data on login
-            if(isWaitingForSync) {
+            if (isWaitingForSync) {
                 console.warn("Save blocked: Still syncing...");
                 return;
             }
@@ -2694,22 +3634,26 @@
 
             localStorage.setItem('b_coins', coins);
             localStorage.setItem('b_total', total);
+            localStorage.setItem('b_treats', treats);
+            localStorage.setItem('b_totalStudyMinutes', totalStudyMinutes);
             localStorage.setItem('b_vouchers', JSON.stringify(vouchers));
             localStorage.setItem('b_custom_quests', JSON.stringify(customQuests));
             localStorage.setItem('b_custom_rewards', JSON.stringify(customRewards));
-            
+
             // OPTIMISTIC UI: Show success immediately (since local save is done)
             showSaveIndicator('✅ Saved');
             setTimeout(() => showSaveIndicator(''), 2000);
-            
+
             // Cloud Push (Background)
             if (db && auth.currentUser) {
                 const statusEl = document.getElementById('pf-cloud-status');
-                if(statusEl) statusEl.innerText = '☁️ Syncing...';
+                if (statusEl) statusEl.innerText = '☁️ Syncing...';
 
                 db.collection('users').doc(auth.currentUser.uid).set({
                     coins: coins,
                     total: total,
+                    treats: treats,
+                    totalStudyMinutes: totalStudyMinutes,
                     vouchers: JSON.stringify(vouchers),
                     customQuests: JSON.stringify(customQuests),
                     customRewards: JSON.stringify(customRewards),
@@ -2717,34 +3661,34 @@
                     lastSaveTime: timestamp, // Sync timestamp to handle conflicts
                     serverTimestamp: firebase.firestore.FieldValue.serverTimestamp()
                 }, { merge: true })
-                .then(() => {
-                    console.log("Cloud Background Sync Success");
-                    if(statusEl) {
-                        statusEl.innerText = '✅ Cloud Synced';
-                        statusEl.style.color = '#34c759';
-                    }
-                })
-                .catch(err => {
-                    console.error("Cloud Background Sync Error", err);
-                    if(statusEl) {
-                        statusEl.innerText = '⚠️ Sync Pending';
-                        statusEl.style.color = 'orange';
-                    }
-                    // We do NOT alert user, to avoid interrupting flow. 
-                    // Local save is secure, cloud will catch up later.
-                });
+                    .then(() => {
+                        console.log("Cloud Background Sync Success");
+                        if (statusEl) {
+                            statusEl.innerText = '✅ Cloud Synced';
+                            statusEl.style.color = '#34c759';
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Cloud Background Sync Error", err);
+                        if (statusEl) {
+                            statusEl.innerText = '⚠️ Sync Pending';
+                            statusEl.style.color = 'orange';
+                        }
+                        // We do NOT alert user, to avoid interrupting flow. 
+                        // Local save is secure, cloud will catch up later.
+                    });
             }
         }
 
         function showSaveIndicator(msg) {
             let el = document.getElementById('save-toast');
-            if(!el) {
+            if (!el) {
                 el = document.createElement('div');
                 el.id = 'save-toast';
                 el.style.cssText = "position:fixed; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.7); color:white; padding:5px 15px; border-radius:20px; font-size:12px; z-index:10000; pointer-events:none; transition:opacity 0.3s;";
                 document.body.appendChild(el);
             }
-            if(!msg) {
+            if (!msg) {
                 el.style.opacity = '0';
             } else {
                 el.innerText = msg;
@@ -2809,9 +3753,9 @@
             coins = 0; total = 0;
             vouchers = []; customQuests = []; customRewards = [];
             profile = { name: 'Adventurer', bio: 'On a quest for greatness!', avatar: '\uD83D\uDC15' };
-            
+
             save(); // Triggers optimistic save & cloud sync
-            
+
             closeReset();
             render();
         }
@@ -2838,9 +3782,11 @@
             document.getElementById('cat-btns').style.display = 'none';
             const result = document.getElementById('cat-result');
             if (yes) {
-                result.innerHTML = '<div class="cat-safe-txt">Good human! You\'re safe... for now. 😼</div>';
+                coins += 10; total += 10;
+                save(); render();
+                result.innerHTML = '<div class="cat-safe-txt">Good human! Here is +10 Coins! 😼</div>';
             } else {
-                const pen = currentCatQ.penalty;
+                let pen = Math.floor(currentCatQ.penalty * 0.7); // Reduced penalty
                 coins = Math.max(0, coins - pen);
                 total = Math.max(0, total - Math.floor(pen / 2));
                 save(); render();
@@ -2858,4 +3804,5 @@
         }
     </script>
 </body>
+
 </html>
