@@ -1565,8 +1565,8 @@
         // Camera controls
         // Camera controls
         // More top-down initial view; increase phi to move camera a bit lower
-        const isMobileScreen = window.innerWidth < 800;
-        let camCtrl = { r: isMobileScreen ? 75 : 55, th: 0.0, ph: 1.35 }; // radius, theta, phi
+        const isMobileScreen = window.innerWidth < 500;
+        let camCtrl = { r: isMobileScreen ? 75 : 38, th: 0.0, ph: 1.45 }; // radius, theta, phi
         let camOffset = new THREE.Vector3(0, 0, 0); // Pan offset
         let isDragging = false, lastMouse = { x: 0, y: 0 }, dragMode = 'rotate'; // 'rotate' or 'pan'
 
@@ -2575,13 +2575,13 @@
             const maxBoatRadius = 49; // Stay inside water edge (52)
             for (let i = 0; i < boatCount; i++) {
                 const grp = new THREE.Group();
-                const hull = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.22, 0.65), new THREE.MeshPhongMaterial({ color: 0x663300 }));
+                const hull = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.22, 1.5), new THREE.MeshPhongMaterial({ color: 0x663300 }));
                 hull.position.y = 0;
                 grp.add(hull);
                 const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 1.0, 6), new THREE.MeshLambertMaterial({ color: 0x331a00 }));
                 mast.position.y = 0.56; grp.add(mast);
                 const sail = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 0.56), new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
-                sail.position.set(0.19, 0.5, 0); sail.rotation.y = 0.1; grp.add(sail);
+                sail.position.set(0, 0.5, 0.19); sail.rotation.y = Math.PI / 2 + 0.1; grp.add(sail);
 
                 // place on water with circular motion parameters
                 const ang = Math.random() * Math.PI * 2;
