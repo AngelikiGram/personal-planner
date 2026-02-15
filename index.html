@@ -1673,7 +1673,7 @@
                 size = box.getSize(new THREE.Vector3());
             }
 
-            world.position.x += 10;
+            world.position.x += 10; world.position.y -= 4.0;
 
             // Place camera so full terrain is visible and centralized, rotated 45 degrees around center
             const camDistance = Math.max(size.x, size.z) * 1.1 + 30;
