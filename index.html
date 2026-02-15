@@ -1216,10 +1216,8 @@
             }
 
             .viewport {
-                flex: 2;
-                /* Increased flex ratio for mobile as requested */
-                min-height: 60vh;
-                /* Ensure 3D view is larger on phone */
+                flex: 1.2;
+                min-height: 50vh;
             }
 
             .content {
@@ -2907,7 +2905,7 @@
                 unlockCoins: 1000,
                 activities: [
                     { name: 'Hug a Tree', desc: 'Channel your inner koala gratitude by travelling to the nearest forest.', reward: 30, type: 'quest' },
-                    { name: 'Rent Hammock', desc: 'A premium nap spot.', reward: 50, type: 'reward' }
+                    { name: 'Rent Hammock', desc: 'A premium nap spot.', reward: 20, type: 'quest' }
                 ]
             },
             'Pink Boutique': {
@@ -3731,11 +3729,13 @@
             document.getElementById('reset-overlay').classList.remove('show');
         }
         function confirmReset() {
-            coins = 0; total = 0;
+            coins = 0; total = 0; treats = 0; totalStudyMinutes = 0;
             vouchers = []; customQuests = []; customRewards = [];
             profile = { name: 'Adventurer', bio: 'On a quest for greatness!', avatar: '\uD83D\uDC15' };
 
             save(); // Triggers optimistic save & cloud sync
+
+            if (typeof mkFlowers === 'function') mkFlowers();
 
             closeReset();
             render();
